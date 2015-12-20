@@ -1,0 +1,367 @@
+import java.sql.*;
+import java.util.ArrayList;
+
+
+public class Database {
+
+	private String MYSQL_DRIVER = "com.mysql.jdbc.Driver";
+	String databaseURL = "jdbc:mysql://localhost:3306/Twitter";
+	String user = "root";
+	Connection con = null;
+	Statement st = null;
+	
+	public Database() {
+
+		    try {
+		      Class.forName(MYSQL_DRIVER);
+		      System.out.println("Class Loaded....");
+		      con = DriverManager.getConnection(databaseURL,"","");
+		      System.out.println("Connected to the database....");
+		      st = con.createStatement();
+		      
+		      int c =st.executeUpdate("create table if not exists Tweets ( tweet_id int(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,"
+		      		+ "tweet_date date, retweet_count int(6), tweet_point int(6), tweet_label varchar(10));");
+		      
+		       st.executeUpdate("create table if not exists Slangs( word_id int(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,"
+		   		+ " slang_name varchar(30), slang_point int(6));");
+		       
+		       st.executeUpdate("create table if not exists Conjuctions( word_id int(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,"
+				   		+ " conj_name varchar(30), conj_point int(6));");
+		       
+		       st.executeUpdate("create table if not exists Verbs( word_id int(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,"
+				   		+ " verb_name varchar(30), verb_point int(6));");
+		       
+		       st.executeUpdate("create table if not exists Symbols( word_id int(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,"
+				   		+ " symbol_name varchar(30), symbol_point int(6));");
+		       
+		       st.executeUpdate("create table if not exists WordGroups( word_id int(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,"
+				   		+ " wg_name varchar(30), wg_point int(6));");
+		       
+		       st.executeUpdate("create table if not exists Adjectives( word_id int(6) UNSIGNED AUTO_INCREMENT PRIMARY KEY,"
+				   		+ " adj_name varchar(30), adj_point int(6));");
+		       
+		      System.out.println("Table have been created.");
+		      System.out.println(c+" Row(s) have been affected");
+		    //  System.out.println(st.executeQuery("select * from Tweets"));
+		      
+		      //con.close();
+
+
+			    
+		    } catch(ClassNotFoundException ex) {
+		       System.out.println("ClassNotFoundException:\n"+ex.toString());
+		       ex.printStackTrace();
+
+		    } catch(SQLException ex) {
+		        System.out.println("SQLException:\n"+ex.toString());
+		        ex.printStackTrace();
+		    }
+		    
+		  }
+	
+	public void addTweets(Date tweetdate,int rtCount, int tweetPoint, String label) 
+	{
+		try{
+			  Class.forName(MYSQL_DRIVER);
+		      System.out.println("Class Loaded....");
+		      con = DriverManager.getConnection(databaseURL,"","");
+		      System.out.println("Inserting data....");
+		      st = con.createStatement();
+		      
+		     // int c =st.executeUpdate("insert into Tweets (tweet_date, tweet_hashtag, tweet_mention,tweet_url,retweet_count,tweet_point,tweet_label) values('2015-12-05','hashtag','mention','https://ahmetkarabas.com',10,7,'positive')");  
+		      	
+		      String ins = "insert into Tweets (tweet_date,retweet_count,tweet_point,tweet_label)"
+		      		+ "values(?,?,?,?)";
+		      PreparedStatement preparedStmt = con.prepareStatement(ins);
+		      
+		      preparedStmt.setDate(1, tweetdate);
+		      preparedStmt.setInt(2, rtCount);
+		      preparedStmt.setInt(3, tweetPoint);
+		      preparedStmt.setString(4, label);
+		      
+		      preparedStmt.execute();     
+		      
+		      System.out.println("Data have been added.");
+		  //  System.out.println(c+" Row(s) have been affected");	
+		     		     
+		}
+			  catch(ClassNotFoundException ex) {
+		       System.out.println("ClassNotFoundException:\n"+ex.toString());
+		       ex.printStackTrace();
+
+		    } catch(SQLException ex) {
+		        System.out.println("SQLException:\n"+ex.toString());
+		        ex.printStackTrace();
+		    }		
+	}
+	public void showTweets()
+	{	
+		ArrayList<Object> columnNames = new ArrayList<Object>();
+        ArrayList<Object> data = new ArrayList<Object>();
+		
+		try{
+			System.out.println("Fetching adjectives");
+			ResultSet rs=st.executeQuery("select * from Adjectives");  
+			
+			 ResultSetMetaData md = rs.getMetaData();
+	            int columns = md.getColumnCount();
+	        //  Get column names
+	            for (int i = 1; i <= columns; i++)
+	            {
+	                columnNames.add( md.getColumnName(i) );
+	            }
+
+	            //  Get row data
+	            while (rs.next())
+	            {
+	                ArrayList row = new ArrayList(columns);
+
+	                for (int i = 1; i <= columns; i++)
+	                {
+	                    row.add( rs.getObject(i) );
+	                }
+
+	                data.add( row );
+	            }
+	            
+	            for(Object v:data)
+	            {
+	            	System.out.println(v.toString());
+	            }
+			}
+			catch(SQLException ex) {
+		        System.out.println("SQLException:\n"+ex.toString());
+		        ex.printStackTrace();
+		    }
+	}
+	public void updateTweets()
+	{
+		try{
+		    int c =st.executeUpdate("");  //degistirilecek
+			}
+			catch(SQLException ex) {
+		        System.out.println("SQLException:\n"+ex.toString());
+		        ex.printStackTrace();
+		    }
+		
+	}
+	
+	public void dropTweetTable()
+	{
+		try{
+	      int c =st.executeUpdate("drop table Tweets");  
+		}
+		catch(SQLException ex) {
+	        System.out.println("SQLException:\n"+ex.toString());
+	        ex.printStackTrace();
+	    }
+	}
+	
+	public void dropAllWords()
+	{
+		try{
+		      st.executeUpdate("drop table Adjectives");
+		      st.executeUpdate("drop table Conjuctions");
+		      st.executeUpdate("drop table Slangs");
+		      st.executeUpdate("drop table Symbols");
+		      st.executeUpdate("drop table Verbs");
+		      st.executeUpdate("drop table Wordgroups");
+		      
+			}
+			catch(SQLException ex) {
+		        System.out.println("SQLException:\n"+ex.toString());
+		        ex.printStackTrace();
+		    }
+	}
+	
+	public void addWords()
+	{
+		try{
+		
+		  Class.forName(MYSQL_DRIVER);
+	      System.out.println("Class Loaded....");
+	      con = DriverManager.getConnection(databaseURL,"","");
+	      System.out.println("Inserting data....");
+	      st = con.createStatement();
+	      
+	    //adding slangs
+		st.executeUpdate("insert into Slangs (slang_name,slang_point)"
+	      		+ "values('öküz',-3)");
+		st.executeUpdate("insert into Slangs (slang_name,slang_point)"
+	      		+ "values('parlak',1)");
+		st.executeUpdate("insert into Slangs (slang_name,slang_point)"
+	      		+ "values('racon',-1)");
+		st.executeUpdate("insert into Slangs (slang_name,slang_point)"
+	      		+ "values('yollu',-2)");
+		st.executeUpdate("insert into Slangs (slang_name,slang_point)"
+	      		+ "values('madara',-1)");
+		st.executeUpdate("insert into Slangs (slang_name,slang_point)"
+	      		+ "values('keriz',-1)");
+		st.executeUpdate("insert into Slangs (slang_name,slang_point)"
+	      		+ "values('hıyar',-1)");
+		st.executeUpdate("insert into Slangs (slang_name,slang_point)"
+	      		+ "values('filinta',1)");
+		st.executeUpdate("insert into Slangs (slang_name,slang_point)"
+	      		+ "values('dikiz',-1)");
+		
+		//adding conjuctions
+		st.executeUpdate("insert into Conjuctions (conj_name,conj_point)"
+	      		+ "values('ve',0)");
+		st.executeUpdate("insert into Conjuctions (conj_name,conj_point)"
+	      		+ "values('fakat',0)");
+		st.executeUpdate("insert into Conjuctions (conj_name,conj_point)"
+	      		+ "values('ancak',0)");
+		st.executeUpdate("insert into Conjuctions (conj_name,conj_point)"
+	      		+ "values('ile',0)");
+		st.executeUpdate("insert into Conjuctions (conj_name,conj_point)"
+	      		+ "values('de',0)");	
+		
+		//adding verbs
+		st.executeUpdate("insert into Verbs (verb_name,verb_point)"
+	      		+ "values('aç',0)");
+		st.executeUpdate("insert into Verbs (verb_name,verb_point)"
+	      		+ "values('at',0)");
+		st.executeUpdate("insert into Verbs (verb_name,verb_point)"
+	      		+ "values('çiz',0)");
+		st.executeUpdate("insert into Verbs (verb_name,verb_point)"
+	      		+ "values('del',0)");
+		st.executeUpdate("insert into Verbs (verb_name,verb_point)"
+	      		+ "values('gel',0)");
+		st.executeUpdate("insert into Verbs (verb_name,verb_point)"
+	      		+ "values('kal',0)");
+		st.executeUpdate("insert into Verbs (verb_name,verb_point)"
+	      		+ "values('git',0)");
+		st.executeUpdate("insert into Verbs (verb_name,verb_point)"
+	      		+ "values('sev',1)");
+		st.executeUpdate("insert into Verbs (verb_name,verb_point)"
+	      		+ "values('tak',0)");
+		st.executeUpdate("insert into Verbs (verb_name,verb_point)"
+	      		+ "values('yık',-1)");
+		st.executeUpdate("insert into Verbs (verb_name,verb_point)"
+	      		+ "values('yüz',0)");
+		st.executeUpdate("insert into Verbs (verb_name,verb_point)"
+	      		+ "values('gör',0)");
+		
+		//adding symbols
+		st.executeUpdate("insert into Symbols (symbol_name,symbol_point)"
+	      		+ "values(':)',2)");
+		st.executeUpdate("insert into Symbols (symbol_name,symbol_point)"
+	      		+ "values(':D',3)");
+		st.executeUpdate("insert into Symbols (symbol_name,symbol_point)"
+	      		+ "values(':(',-2)");
+		st.executeUpdate("insert into Symbols (symbol_name,symbol_point)"
+	      		+ "values(':'(',-3)");
+		st.executeUpdate("insert into Symbols (symbol_name,symbol_point)"
+	      		+ "values(':@',-4)");
+		st.executeUpdate("insert into Symbols (symbol_name,symbol_point)"
+	      		+ "values(':P',1)");
+		st.executeUpdate("insert into Symbols (symbol_name,symbol_point)"
+	      		+ "values(':-)',1)");
+		
+		//adding word groups
+		st.executeUpdate("insert into WordGroups (wg_name,wg_point)"
+	      		+ "values('ses seda',-1)");
+		st.executeUpdate("insert into WordGroups (wg_name,wg_point)"
+	      		+ "values('eş dost',1)");
+		st.executeUpdate("insert into WordGroups (wg_name,wg_point)"
+	      		+ "values('akıllı uslu',1)");
+		st.executeUpdate("insert into WordGroups (wg_name,wg_point)"
+	      		+ "values('mutlu mesut',2)");
+		st.executeUpdate("insert into WordGroups (wg_name,wg_point)"
+	      		+ "values('sağlık sıhhat',1)");
+		st.executeUpdate("insert into WordGroups (wg_name,wg_point)"
+	      		+ "values('doğru dürüst',1)");
+		st.executeUpdate("insert into WordGroups (wg_name,wg_point)"
+	      		+ "values('iyi kötü',0)");
+		st.executeUpdate("insert into WordGroups (wg_name,wg_point)"
+	      		+ "values('az çok',0)");
+		st.executeUpdate("insert into WordGroups (wg_name,wg_point)"
+	      		+ "values('er geç',0)");
+		st.executeUpdate("insert into WordGroups (wg_name,wg_point)"
+	      		+ "values('acı tatlı',0)");
+		st.executeUpdate("insert into WordGroups (wg_name,wg_point)"
+	      		+ "values('ezik büzük',-1)");
+		st.executeUpdate("insert into WordGroups (wg_name,wg_point)"
+	      		+ "values('abuk subuk',-1)");
+		st.executeUpdate("insert into WordGroups (wg_name,wg_point)"
+	      		+ "values('eciş bücüş',-1)");
+		st.executeUpdate("insert into WordGroups (wg_name,wg_point)"
+	      		+ "values('mırın kırın',-1)");
+
+		//adding adjectives
+		
+		st.executeUpdate("insert into Adjectives (adj_name,adj_point)"
+	      		+ "values('mutlu',2)");
+		st.executeUpdate("insert into Adjectives (adj_name,adj_point)"
+	      		+ "values('mutsuz',-2)");
+		st.executeUpdate("insert into Adjectives (adj_name,adj_point)"
+	      		+ "values('sevimli',1)");
+		st.executeUpdate("insert into Adjectives (adj_name,adj_point)"
+	      		+ "values('sevimsiz',-1)");
+		st.executeUpdate("insert into Adjectives (adj_name,adj_point)"
+	      		+ "values('stresli',-1)");
+		st.executeUpdate("insert into Adjectives (adj_name,adj_point)"
+	      		+ "values('stressiz',1)");
+		st.executeUpdate("insert into Adjectives (adj_name,adj_point)"
+	      		+ "values('güzel',1)");
+		st.executeUpdate("insert into Adjectives (adj_name,adj_point)"
+	      		+ "values('çirkin',-1)");
+		st.executeUpdate("insert into Adjectives (adj_name,adj_point)"
+	      		+ "values('sevinçli',2)");
+		st.executeUpdate("insert into Adjectives (adj_name,adj_point)"
+	      		+ "values('hüzünlü',-2)");
+		st.executeUpdate("insert into Adjectives (adj_name,adj_point)"
+	      		+ "values('iyi',2)");
+		st.executeUpdate("insert into Adjectives (adj_name,adj_point)"
+	      		+ "values('kötü',-2)");
+		st.executeUpdate("insert into Adjectives (adj_name,adj_point)"
+	      		+ "values('faydalı',1)");
+		st.executeUpdate("insert into Adjectives (adj_name,adj_point)"
+	      		+ "values('faydasız',-1)");
+		st.executeUpdate("insert into Adjectives (adj_name,adj_point)"
+	      		+ "values('keyifli',1)");
+		st.executeUpdate("insert into Adjectives (adj_name,adj_point)"
+	      		+ "values('keyifsiz',-1)");
+		st.executeUpdate("insert into Adjectives (adj_name,adj_point)"
+	      		+ "values('iyimser',1)");
+		st.executeUpdate("insert into Adjectives (adj_name,adj_point)"
+	      		+ "values('kötümser',-1)");
+		st.executeUpdate("insert into Adjectives (adj_name,adj_point)"
+	      		+ "values('başarılı',1)");
+		st.executeUpdate("insert into Adjectives (adj_name,adj_point)"
+	      		+ "values('başarısız',-1)");
+		st.executeUpdate("insert into Adjectives (adj_name,adj_point)"
+	      		+ "values('güleç',1)");
+		st.executeUpdate("insert into Adjectives (adj_name,adj_point)"
+	      		+ "values('somurtkan',-1)");
+		st.executeUpdate("insert into Adjectives (adj_name,adj_point)"
+	      		+ "values('canlı',1)");
+		st.executeUpdate("insert into Adjectives (adj_name,adj_point)"
+	      		+ "values('durgun',-1)");
+		st.executeUpdate("insert into Adjectives (adj_name,adj_point)"
+	      		+ "values('harika',1)");
+		st.executeUpdate("insert into Adjectives (adj_name,adj_point)"
+	      		+ "values('berbat',-1)");
+		st.executeUpdate("insert into Adjectives (adj_name,adj_point)"
+	      		+ "values('esprili',2)");
+		st.executeUpdate("insert into Adjectives (adj_name,adj_point)"
+	      		+ "values('sıkıcı',-1)");		
+				
+		
+		}
+		
+		catch(ClassNotFoundException ex) {
+		       System.out.println("ClassNotFoundException:\n"+ex.toString());
+		       ex.printStackTrace();
+
+		    } catch(SQLException ex) {
+		        System.out.println("SQLException:\n"+ex.toString());
+		        ex.printStackTrace();
+		    }		
+		
+		
+	}
+		
+}
+
+	
