@@ -1,0 +1,324 @@
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.logging.Logger;
+import java.lang.Object;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+
+import twitter4j.conf.*;
+import zemberek.morphology.apps.TurkishMorphParser;
+import zemberek.morphology.parser.MorphParse;
+import twitter4j.HashtagEntity;
+import twitter4j.Query;
+import twitter4j.QueryResult;
+import twitter4j.Status;
+import twitter4j.Twitter;
+import twitter4j.TwitterException;
+import twitter4j.TwitterFactory;
+import twitter4j.UserMentionEntity;
+import twitter4j.auth.AccessToken;
+import twitter4j.auth.RequestToken;
+
+
+
+public class TwitterApplication {
+
+	private final Logger logger = Logger.getLogger(TwitterApplication.class.getName());
+	private String CONSUMER_KEY="*****************************";
+	private String CONSUMER_SECRET="*****************************************";
+	Database d = new Database();
+	private String MYSQL_DRIVER = "com.mysql.jdbc.Driver";
+	String databaseURL = "jdbc:mysql://localhost:3306/Twitter";
+	
+	Connection con = null;
+	Statement st = null;
+	   
+	   
+	
+	public static void main(String[] args) throws IOException {
+		// TODO Auto-generated method stub
+		
+		new TwitterApplication().retrieve();
+		
+	/*	TurkishMorphParser parser;
+		try {
+			parser = TurkishMorphParser.createWithDefaults();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		ArrayList<String> parsedList = new ArrayList<String>(); */
+		Database d = new Database();
+		
+	    
+		//d.addTweets();	
+	//	d.showTweets();
+		
+		//d.dropTweetTable();
+		
+		
+	}
+	
+	public void retrieve() throws IOException{
+		logger.info("Retrieving tweets...");
+		ConfigurationBuilder builder = new ConfigurationBuilder();
+		builder.setOAuthConsumerKey(CONSUMER_KEY);
+		builder.setOAuthConsumerSecret(CONSUMER_SECRET);
+		Configuration configuration = builder.build();
+		TwitterFactory factory = new TwitterFactory(configuration);
+		Twitter twitter = factory.getInstance();
+		
+		ArrayList<String> tweetList = new ArrayList<String>(); //ilk query icin
+		ArrayList<String> tweetList2 = new ArrayList<String>(); //ikinci query icin
+		ArrayList<String> hashtagList = new ArrayList<String>();
+		ArrayList<String> mentionList = new ArrayList<String>();
+		
+	//	Twitter twitter = new TwitterFactory().getInstance();
+		
+		//String user = "Ahmet_Karabas";
+		
+		
+		Query query = new Query("diriliş ertuğrul" + " -filter:retweets -filter:links -filter:replies -filter:images -filter:mentions"); //
+		//hashtagler icin de arastir
+		
+		Date date=new Date();
+		String modifiedDate= new SimpleDateFormat("2015-12-15").format(date);
+		String modifiedDate2= new SimpleDateFormat("2015-12-18" ).format(date);
+        query.setSince(modifiedDate);
+        query.setUntil(modifiedDate2);
+        
+
+        query.lang("tr");
+		query.setCount(100);
+		
+		//query.setSince("2011-01-01");
+		System.out.println("key:" + twitter.getConfiguration().getOAuthConsumerKey());
+		System.out.println("secret: " + twitter.getConfiguration().getOAuthConsumerSecret());
+		AccessToken accessToken = new AccessToken("*********-*********************************", "**************************************");
+	  //  twitter.setOAuthConsumer("**********************", "*******************************************");
+	    twitter.setOAuthAccessToken(accessToken);
+		
+		try {
+					
+		QueryResult result = twitter.search(query);
+		
+		System.out.println("Count : " + result.getTweets().size()) ;		
+		
+		//d.dropAllWords();
+		
+		// adding words to database
+		//d.addWords();
+				
+		for (Status tweet : result.getTweets()) {	//her tweet icin		
+			
+		for(HashtagEntity hashtag : tweet.getHashtagEntities()){
+			//System.out.println(hashtag);
+			hashtagList.add(hashtag.getText().toString());
+		}
+		
+		for(UserMentionEntity mention : tweet.getUserMentionEntities()){
+			mentionList.add(mention.getScreenName().toString());
+		}
+		
+	   // System.out.println("@"+tweet.getUser().getScreenName() + " text : " + tweet.getText() + " count : " + tweet.getRetweetCount());
+		
+		
+		
+		tweetList.add(tweet.getText());	
+	
+	//	Database d = new Database();
+		TurkishMorphParser parser = TurkishMorphParser.createWithDefaults();
+		Class.forName(MYSQL_DRIVER);
+	      System.out.println("Class Loaded....");
+	      con = DriverManager.getConnection(databaseURL,"","");
+	      System.out.println("Inserting data....");
+	      st = con.createStatement();
+	      
+		int tweetPoint = 0;
+		String tweetLabel;
+		
+		String msg = tweet.getText();
+		
+		String[] input = msg.split(" ");
+		for(int j = 0;  j < input.length; j++)
+		{
+		System.out.println(input[j]);
+		input[j].contains("");
+		new ParseWords(parser).parse(input[j]);
+		ResultSet rs = st.executeQuery("select * from symbols");
+		System.out.println("Db den " +rs.getString("symbol_name"));
+		
+		}
+		
+		
+		//List<MorphParse> parses = parser.parse(tweet.getText());
+		//System.out.println("Kelime kökü"+parses);
+		
+		/*for(MorphParse parse : parses)
+		{
+			System.out.println("Kelime kökü" +parse.formatLong());
+		} */
+		
+		
+		//System.out.println(parsedWord);
+		//Calculating tweet point
+		if(tweetPoint>0)
+		{
+			tweetLabel="positive";
+		}
+		else if(tweetPoint<0)
+		{
+			tweetLabel="negative";
+		}
+		else{
+			tweetLabel="neutral";
+		}
+		
+		java.sql.Date tweetDate = convertJavaDateToSqlDate(tweet.getCreatedAt());
+		d.addTweets(tweetDate,tweet.getRetweetCount(),tweetPoint,tweetLabel);		
+		
+		
+		}
+		
+		//Query query = new Query(hashtagList.t + " -filter:retweets -filter:links -filter:replies -filter:images");
+		//QueryResult result2 = twitter.search(query);
+		
+		//for()
+		
+		} catch (TwitterException e) {
+		
+		e.printStackTrace();
+		System.out.println("Failed to search tweets" + e.getMessage());
+		}
+		catch(ClassNotFoundException ex) {
+		       System.out.println("ClassNotFoundException:\n"+ex.toString());
+		       ex.printStackTrace();
+
+		    } catch(SQLException ex) {
+		        System.out.println("SQLException:\n"+ex.toString());
+		        ex.printStackTrace();
+		    }
+		
+		
+    /*    System.out.println("Tweets:");
+		for(String t :tweetList){
+			System.out.println(t); 
+			
+			//parsedList.add(new ParseWords(parser).parse(t));
+		} */
+		
+		HashMap<String,Integer> hashmap = new HashMap<String,Integer>();
+		System.out.println("Hashtags:");
+		for(String h:hashtagList){ //hashtaglarin bulunma sayisi bulunuyor
+			System.out.println(h);
+			if(hashmap.containsKey(h))
+			{
+				hashmap.put(h, hashmap.get(h)+1);
+			}
+			else{
+			hashmap.put(h, 1);
+			}
+		} 
+		int max=0;
+		String maxHashtag="";
+		for(Entry<String,Integer> entry : hashmap.entrySet())
+		{	
+			if(entry.getValue()>max){
+				max=entry.getValue();		
+				maxHashtag=entry.getKey();
+			}
+		}
+		
+		System.out.println("En cok bulunan hashtag: " + maxHashtag);
+		 
+		//En cok bulunan hashtag ile yeniden aratiliyor
+		Query queryNew = new Query(maxHashtag + " -filter:retweets -filter:links -filter:replies -filter:images -filter:mentions");
+		
+		String modifiedDate3= new SimpleDateFormat("2015-12-15").format(date);
+		String modifiedDate4= new SimpleDateFormat("2015-12-18" ).format(date);
+        queryNew.setSince(modifiedDate3);
+        queryNew.setUntil(modifiedDate4);
+        
+
+        queryNew.lang("tr");
+		queryNew.setCount(100);
+		
+		try {
+			
+			QueryResult result2 = twitter.search(queryNew);
+			
+			System.out.println("Count : " + result2.getTweets().size()) ;		
+			
+			//d.dropAllWords();
+			
+			
+					
+			for (Status tweet : result2.getTweets()) {	//her tweet icin
+							
+				tweetList2.add(tweet.getText());			
+					
+				
+				int tweetPoint = 0;
+				String tweetLabel;
+				
+				String msg2 = tweet.getText();
+				
+				String[] input = msg2.split(" ");
+				for(int j = 0;  j < input.length; j++)
+				{
+				System.out.println(input[j]);
+				input[j].contains("");
+				}
+				
+				//Calculating tweet point
+				if(tweetPoint>0)
+				{
+					tweetLabel="positive";
+				}
+				else if(tweetPoint<0)
+				{
+					tweetLabel="negative";
+				}
+				else{
+					tweetLabel="neutral";
+				}
+				
+				java.sql.Date tweetDate = convertJavaDateToSqlDate(tweet.getCreatedAt());
+				
+				d.addTweets(tweetDate,tweet.getRetweetCount(),tweetPoint,tweetLabel);	
+				
+			}
+		
+			
+			
+		}
+		 catch (TwitterException e) {
+				
+				e.printStackTrace();
+				System.out.println("Failed to search tweets" + e.getMessage());
+				
+				}	
+		
+	    
+		d.showTweets();
+		logger.info("done! ");
+			
+	}
+	public java.sql.Date convertJavaDateToSqlDate(java.util.Date date) {
+	    return new java.sql.Date(date.getTime());
+	}
+	
+	public void searchTweets(){
+		
+		
+	}
+	
+}
