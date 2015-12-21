@@ -27,26 +27,51 @@ import twitter4j.UserMentionEntity;
 import twitter4j.auth.AccessToken;
 import twitter4j.auth.RequestToken;
 
+import weka.core.Instance;
+import weka.core.Instances;
+import weka.experiment.InstanceQuery;
+import weka.classifiers.Classifier;
+import weka.classifiers.Evaluation;
+import weka.classifiers.evaluation.NominalPrediction;
+import weka.classifiers.lazy.IBk;
+import weka.classifiers.rules.DecisionTable;
+import weka.classifiers.rules.PART;
+import weka.classifiers.trees.DecisionStump;
+import weka.classifiers.trees.J48;
+import weka.clusterers.SimpleKMeans;
+import weka.core.FastVector;
+
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+
+
+
 
 
 public class TwitterApplication {
 
 	private final Logger logger = Logger.getLogger(TwitterApplication.class.getName());
-	private String CONSUMER_KEY="*****************************";
-	private String CONSUMER_SECRET="*****************************************";
+	private String CONSUMER_KEY="OR611vX1xkmnuXLwD0tRwpy7D";
+	private String CONSUMER_SECRET="F4REstjhTx75xzwO0dFamRLayEj4gjPYYeKzWBwfsnEMZc4Uf7";
 	Database d = new Database();
 	private String MYSQL_DRIVER = "com.mysql.jdbc.Driver";
 	String databaseURL = "jdbc:mysql://localhost:3306/Twitter";
 	
 	Connection con = null;
 	Statement st = null;
-	   
+	BufferedWriter bufferedWriter=null;
 	   
 	
-	public static void main(String[] args) throws IOException {
+	   
+	
+	public static void main(String[] args) throws Exception {
 		// TODO Auto-generated method stub
 		
-		new TwitterApplication().retrieve();
+		//new TwitterApplication().retrieve();
 		
 	/*	TurkishMorphParser parser;
 		try {
@@ -56,13 +81,89 @@ public class TwitterApplication {
 			e.printStackTrace();
 		}
 		ArrayList<String> parsedList = new ArrayList<String>(); */
-		Database d = new Database();
+		//Database d = new Database();
 		
 	    
 		//d.addTweets();	
 	//	d.showTweets();
 		
 		//d.dropTweetTable();
+		
+		
+		BufferedReader datafile = readDataFile("dosya.txt");
+		 
+		Instances data = new Instances(datafile);
+		data.setClassIndex(data.numAttributes() - 1);
+ 
+		// Do 10-split cross validation
+		   //Instances[][] split = crossValidationSplit(data, 10);
+ 
+		// Separate split into training and testing arrays
+		  //Instances[] trainingSplits = split[0];
+	     //Instances[] testingSplits = split[1];
+		
+		SimpleKMeans kMeans = new SimpleKMeans();
+		kMeans.setNumClusters(3);
+		kMeans.buildClusterer(data);
+		
+		Instances centroids = kMeans.getClusterCentroids();
+		
+		for (int i = 0; i < centroids.numInstances(); i++) { 
+		      System.out.println( "Centroid " + i+1 + ": " + centroids.instance(i)); 
+		}
+		
+		for (int i = 0; i < data.numInstances(); i++) { 
+		      System.out.println( data.instance(i) + " is in cluster " + kMeans.clusterInstance(data.instance(i)) + 1); 
+
+		} 
+
+		
+		Instance first = data.instance(0);
+		Instance second = data.instance(1);
+		data.delete(0);
+		data.delete(1);
+		
+		Classifier ibk = new IBk();
+		ibk.buildClassifier(data);
+		
+		double class1 = ibk.classifyInstance(first);
+		double class2 = ibk.classifyInstance(second);
+		
+		System.out.println("first: " + class1 + "\nsecond: " + class2);
+		
+		// Use a set of classifiers
+			/*	Classifier[] models = { 
+						new J48(), // a decision tree
+						new PART(), 
+						new DecisionTable(),//decision table majority classifier
+						new DecisionStump() //one-level decision tree
+				};
+				
+				// Run for each model
+				for (int j = 0; j < models.length; j++) {
+		 
+					// Collect every group of predictions for current model in a FastVector
+					FastVector predictions = new FastVector();
+		 
+					// For each training-testing split pair, train and test the classifier
+					for (int i = 0; i < trainingSplits.length; i++) {
+						Evaluation validation = classify(models[j], trainingSplits[i], testingSplits[i]);
+		 
+						//predictions.appendElements(validation.predictions());
+		 
+						// Uncomment to see the summary for each training-testing pair.
+						System.out.println(models[j].toString());
+					}
+		 
+					// Calculate overall accuracy of current classifier on all splits
+					double accuracy = calculateAccuracy(predictions);
+		 
+					// Print current classifier's name and accuracy in a complicated,
+					// but nice-looking way.
+					System.out.println("Accuracy of " + models[j].getClass().getSimpleName() + ": "
+							+ String.format("%.2f%%", accuracy)
+							+ "\n---------------------------------");
+				} */
 		
 		
 	}
@@ -81,6 +182,7 @@ public class TwitterApplication {
 		ArrayList<String> hashtagList = new ArrayList<String>();
 		ArrayList<String> mentionList = new ArrayList<String>();
 		
+		int tweetPoint = 0;
 	//	Twitter twitter = new TwitterFactory().getInstance();
 		
 		//String user = "Ahmet_Karabas";
@@ -102,8 +204,8 @@ public class TwitterApplication {
 		//query.setSince("2011-01-01");
 		System.out.println("key:" + twitter.getConfiguration().getOAuthConsumerKey());
 		System.out.println("secret: " + twitter.getConfiguration().getOAuthConsumerSecret());
-		AccessToken accessToken = new AccessToken("*********-*********************************", "**************************************");
-	  //  twitter.setOAuthConsumer("**********************", "*******************************************");
+		AccessToken accessToken = new AccessToken("344727895-ZgyHyzGDeZsSuZduKB8wythNfu4yJm8jYHTBdw3f", "m8Jbf2e4HwFOjHvNTiT6rOLqJlH5LQBW9V0nOHaIY7Dea");
+	  //  twitter.setOAuthConsumer("OR611vX1xkmnuXLwD0tRwpy7D", "F4REstjhTx75xzwO0dFamRLayEj4gjPYYeKzWBwfsnEMZc4Uf7");
 	    twitter.setOAuthAccessToken(accessToken);
 		
 		try {
@@ -118,6 +220,8 @@ public class TwitterApplication {
 		//d.addWords();
 				
 		for (Status tweet : result.getTweets()) {	//her tweet icin		
+			
+		tweetPoint=0; // tweet puanini sifirliyoruz	
 			
 		for(HashtagEntity hashtag : tweet.getHashtagEntities()){
 			//System.out.println(hashtag);
@@ -136,13 +240,13 @@ public class TwitterApplication {
 	
 	//	Database d = new Database();
 		TurkishMorphParser parser = TurkishMorphParser.createWithDefaults();
-		Class.forName(MYSQL_DRIVER);
+		 Class.forName(MYSQL_DRIVER);
 	      System.out.println("Class Loaded....");
 	      con = DriverManager.getConnection(databaseURL,"","");
 	      System.out.println("Inserting data....");
 	      st = con.createStatement();
 	      
-		int tweetPoint = 0;
+		
 		String tweetLabel;
 		
 		String msg = tweet.getText();
@@ -154,9 +258,16 @@ public class TwitterApplication {
 		input[j].contains("");
 		new ParseWords(parser).parse(input[j]);
 		ResultSet rs = st.executeQuery("select * from symbols");
+		while(rs.next()){
 		System.out.println("Db den " +rs.getString("symbol_name"));
+		if(input[j].contains(rs.getString("symbol_name"))){
+			tweetPoint=tweetPoint+rs.getInt(3);
+		}
+		}
+		System.out.println("puanımız "+tweetPoint);
 		
 		}
+		
 		
 		
 		//List<MorphParse> parses = parser.parse(tweet.getText());
@@ -170,6 +281,8 @@ public class TwitterApplication {
 		
 		//System.out.println(parsedWord);
 		//Calculating tweet point
+				
+
 		if(tweetPoint>0)
 		{
 			tweetLabel="positive";
@@ -183,7 +296,7 @@ public class TwitterApplication {
 		}
 		
 		java.sql.Date tweetDate = convertJavaDateToSqlDate(tweet.getCreatedAt());
-		d.addTweets(tweetDate,tweet.getRetweetCount(),tweetPoint,tweetLabel);		
+		d.addTweets(tweetDate,tweet.getRetweetCount(),tweetPoint,tweetLabel);
 		
 		
 		}
@@ -266,7 +379,7 @@ public class TwitterApplication {
 				tweetList2.add(tweet.getText());			
 					
 				
-				int tweetPoint = 0;
+				tweetPoint = 0;
 				String tweetLabel;
 				
 				String msg2 = tweet.getText();
@@ -320,5 +433,63 @@ public class TwitterApplication {
 		
 		
 	}
+	 
+	 void usingWeka() throws Exception
+	 {
+		 InstanceQuery iq = new InstanceQuery();
+		 iq.setUsername("nobody");
+		 iq.setQuery("select * from tweets");
+		 
+		 Instances data = iq.retrieveInstances();
+		 
+		 J48 j48 = new J48();	 
+	 }
+	 
+	 public static BufferedReader readDataFile(String filename) {
+			BufferedReader inputReader = null;
+	 
+			try {
+				inputReader = new BufferedReader(new FileReader(filename));
+			} catch (FileNotFoundException ex) {
+				System.err.println("File not found: " + filename);
+			}
+	 
+			return inputReader;
+		}
+	 public static Evaluation classify(Classifier model,
+				Instances trainingSet, Instances testingSet) throws Exception {
+			Evaluation evaluation = new Evaluation(trainingSet);
+	 
+			model.buildClassifier(trainingSet);
+			evaluation.evaluateModel(model, testingSet);
+	 
+			return evaluation;
+		}
+	 
+	 public static double calculateAccuracy(FastVector predictions) {
+			double correct = 0;
+	 
+			for (int i = 0; i < predictions.size(); i++) {
+				NominalPrediction np = (NominalPrediction) predictions.elementAt(i);
+				if (np.predicted() == np.actual()) {
+					correct++;
+				}
+			}
+	 
+			return 100 * correct / predictions.size();
+		}
+	 public static Instances[][] crossValidationSplit(Instances data, int numberOfFolds) {
+			Instances[][] split = new Instances[2][numberOfFolds];
+	 
+			for (int i = 0; i < numberOfFolds; i++) {
+				split[0][i] = data.trainCV(numberOfFolds, i);
+				split[1][i] = data.testCV(numberOfFolds, i);
+			}
+	 
+			return split;
+		}
+ 	 
 	
 }
+
+
