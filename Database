@@ -6,7 +6,7 @@ public class Database {
 
 	private String MYSQL_DRIVER = "com.mysql.jdbc.Driver";
 	String databaseURL = "jdbc:mysql://localhost:3306/Twitter";
-	String user = "root";
+	
 	Connection con = null;
 	Statement st = null;
 	
