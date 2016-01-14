@@ -1,0 +1,143 @@
+import java.awt.EventQueue;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+
+import javax.swing.JFrame;
+import javax.swing.JComboBox;
+import java.awt.BorderLayout;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JButton;
+import java.awt.Color;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+import javax.swing.JTextField;
+import javax.swing.JTextPane;
+
+public class TwitterProject {
+
+	private JFrame frame;
+	private JTextField textField;
+	private final JLabel label = new JLabel("New label");
+	private JTextField textField_1;
+	private JTextField textField_2;
+
+	/**
+	 * Launch the application.
+	 */
+	public static void main(String[] args) {
+		EventQueue.invokeLater(new Runnable() {
+			public void run() {
+				try {
+					TwitterProject window = new TwitterProject();
+					window.frame.setVisible(true);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
+	} 
+
+	/**
+	 * Create the application.
+	 */
+	public TwitterProject() {
+		initialize();
+	}
+
+	/**
+	 * Initialize the contents of the frame.
+	 */
+	@SuppressWarnings("unchecked")
+	public void initialize() {
+		JFrame frame = new JFrame();
+		frame.setBounds(100, 100, 491, 328);
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.setTitle("Twitter Application");
+		frame.getContentPane().setLayout(null);
+		
+		frame.setVisible(true);
+		
+		
+		String [] classifiers = new String[] {"Naive Bayes","K Nearest Neighbor","Support Vector Machine"};
+		String [] programs = new String[]{"Diriliş Ertuğrul","Güldür Güldür","Kara Sevda","Poyraz Karayel"};
+		JComboBox comboBox = new JComboBox(classifiers);
+		JComboBox comboBox1 = new JComboBox(programs);
+		
+		comboBox.setBounds(10, 60, 180, 120);
+		comboBox1.setBounds(200, 60, 166, 120);
+		
+		JLabel label1 = new JLabel("Diziler");
+		
+		JLabel label = new JLabel("Sınıflandırma Metodları");
+		label1.setBounds(246, 20, 120, 20);
+		
+		JButton button = new JButton("Başlat");
+		button.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				
+			}
+		});
+		button.setBounds(350, 227, 100, 40);
+		
+		frame.getContentPane().add(label);
+		frame.getContentPane().add(label1);
+		frame.getContentPane().add(button);
+		frame.getContentPane().add(comboBox);
+		frame.getContentPane().add(comboBox1);
+		label.setBounds(50, 20, 98, 31);
+		frame.getContentPane().add(label);
+		label.setBounds(50, 20, 140, 20);
+		
+		JTextField textDate1 = new JTextField(20);
+		textDate1.setBounds(115, 227, 86, 20);
+		frame.getContentPane().add(textDate1);
+		textDate1.setColumns(10);
+		
+		JButton buttonDate1 = new JButton("Tarih Seçiniz");
+		buttonDate1.setBounds(223, 227, 120, 23);
+		frame.getContentPane().add(buttonDate1);
+		buttonDate1.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				textDate1.setText(new DatePicker(frame).setPickedDate());
+			}
+		});
+		
+		
+		JLabel labelDate1 = new JLabel("Başlangıç Tarihi");
+		labelDate1.setBounds(10, 227, 95, 14);
+		frame.getContentPane().add(labelDate1);
+		
+		JLabel labelDate2 = new JLabel("Bitiş Tarihi");
+		labelDate2.setBounds(10, 264, 86, 14);
+		frame.getContentPane().add(labelDate2);
+		
+		JTextField textDate2 = new JTextField();
+		textDate2.setBounds(115, 261, 86, 20);
+		frame.getContentPane().add(textDate2);
+		textDate2.setColumns(10);
+		
+		JButton buttonDate2 = new JButton("Tarih Seçiniz");
+		buttonDate2.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				
+				textDate2.setText(new DatePicker(frame).setPickedDate());
+			}
+		});
+		buttonDate2.setBounds(223, 261, 120, 23);
+		frame.getContentPane().add(buttonDate2);
+		
+		button.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent arg0) {
+				JOptionPane.showMessageDialog(frame, "thank you for using java");
+			}
+		});
+		
+					
+		
+	}
+}
