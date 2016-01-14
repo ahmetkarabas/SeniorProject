@@ -1711,9 +1711,18 @@ public class TwitterApplication implements Serializable {
 		    JOptionPane.showMessageDialog(null, "Doğru sınıflandırma yüzdesi" + "%" + String.format("%.2f", eval.pctCorrect()) 
 		    + "\nBu dizi hakkında pozitif tweetlerin oranı:" + "%"+ String.format("%.2f", eval.truePositiveRate(0)*100));
 		    
+		    /*
 		    String cls;
 		    cls=dataFiltered.classAttribute().value((int) classifier.classifyInstance(dataFiltered.instance(1)));
-		    System.out.println("En son " + cls);
+		    System.out.println("En son " + cls); */
+		    
+		    for (int  i = 0; i < dataFiltered.numInstances(); i++) {
+		    	   double pred = classifier.classifyInstance(dataFiltered.instance(i));
+		    	   System.out.print("ID: " + dataFiltered.instance(i).value(0));
+		    	   System.out.print(", actual: " + dataFiltered.classAttribute().value((int) dataFiltered.instance(i).classValue()));
+		    	   System.out.println(", predicted: " + dataFiltered.classAttribute().value((int) pred));
+		    	 }
+		    
 		    
 		    return Double.parseDouble(String.format("%.2f", eval.truePositiveRate(0)*100));
 		 
