@@ -1,11 +1,37 @@
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.PrintWriter;
+import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Random;
+import java.util.StringTokenizer;
 import java.util.logging.Logger;
+
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+
+import org.jfree.chart.ChartPanel;
+import org.jfree.chart.JFreeChart;
+
+import libsvm.svm;
+import libsvm.svm_model;
+import libsvm.svm_node;
+import libsvm.svm_parameter;
+
 import java.lang.Object;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -29,30 +55,47 @@ import twitter4j.auth.RequestToken;
 
 import weka.core.Instance;
 import weka.core.Instances;
+import weka.core.Utils;
 import weka.experiment.InstanceQuery;
+import weka.filters.*;
+import weka.filters.supervised.attribute.Discretize;
+import weka.filters.unsupervised.attribute.StringToWordVector;
 import weka.classifiers.Classifier;
 import weka.classifiers.Evaluation;
+import weka.classifiers.bayes.NaiveBayes;
 import weka.classifiers.evaluation.NominalPrediction;
+import weka.classifiers.functions.LibSVM;
 import weka.classifiers.lazy.IBk;
+import weka.classifiers.meta.MultiClassClassifier;
 import weka.classifiers.rules.DecisionTable;
 import weka.classifiers.rules.PART;
 import weka.classifiers.trees.DecisionStump;
 import weka.classifiers.trees.J48;
 import weka.clusterers.SimpleKMeans;
+import weka.core.Attribute;
+import weka.core.Drawable;
 import weka.core.FastVector;
 
-
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.FlowLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 
 
 
+//Seksenlerde kalindi
 
-
-public class TwitterApplication {
+public class TwitterApplication implements Serializable {
 
 	private final Logger logger = Logger.getLogger(TwitterApplication.class.getName());
 	private String CONSUMER_KEY="OR611vX1xkmnuXLwD0tRwpy7D";
@@ -64,14 +107,1004 @@ public class TwitterApplication {
 	Connection con = null;
 	Statement st = null;
 	BufferedWriter bufferedWriter=null;
-	   
-	
-	   
+	static double percent1;//28 aralik 3 ocak
+	static double percent2;//4 ocak 10 ocak
+	static double percent3;// 6 ocak
+	static double percent4;// 8 ocak
 	
 	public static void main(String[] args) throws Exception {
 		// TODO Auto-generated method stub
 		
+		//Arayüz olusturuluyor
+		TwitterApplication t = new TwitterApplication();
+		
+		//String newt = t.cleanupString("Galatasaray şampİYOOONNN!!!!??!'^^^!^^^'  evet oyle oaıdsjad A!OASDA"); // metodu test icin 
+		//System.out.println(newt);
+		
+		JFrame frame = new JFrame();
+		frame.setBounds(100, 100, 491, 328);
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.setTitle("Twitter Application");
+		frame.getContentPane().setLayout(null);
+		
+		frame.setVisible(true);
+		
+		
+		String [] classifiers = new String[] {"Naive Bayes","K Nearest Neighbor","C 4.5 Decision Tree"};
+		String [] programs = new String[]{"Diriliş Ertuğrul","Güldür Güldür Show","Kara Sevda","Poyraz Karayel",
+				 "Seksenler","Eşkıya Dünyaya Hükümdar Olmaz","Arka Sokaklar","Kırgın Çiçekler"};
+		String [] weeks = new String[]{"28 Aralık-3 Ocak","4 Ocak-10 Ocak","6 Ocak","8 Ocak"};
+		
+		JComboBox<String> comboBox = new JComboBox<String>(classifiers);
+		JComboBox<String> comboBox1 = new JComboBox<String>(programs);
+		JComboBox<String> comboBox2 = new JComboBox<String>(weeks);
+ 		
+		//comboBox.getSelectedItem();
+		comboBox.setBounds(10, 60, 180, 120);
+		comboBox1.setBounds(200, 60, 220, 120);
+		comboBox2.setBounds(460,50,160,50);
+		
+		
+		JLabel label1 = new JLabel("TV Programları");
+		
+		JLabel label = new JLabel("Sınıflandırma Metodları");
+		label1.setBounds(246, 20, 120, 20);
+		
+		JLabel label2 = new JLabel("Kaç Cross Validation?");
+		label2.setBounds(10, 200, 130, 20);
+		
+		JLabel label3 = new JLabel("Aralığı Seçiniz");
+		label3.setBounds(480,20,120,20);
+		
+		JTextField textCV = new JTextField(5);
+		textCV.setBounds(140, 200, 120, 20);
+		
+		JLabel label4 = new JLabel("Kaç En Yakın Komşu(KNN için)");
+		label4.setBounds(280,200,200,20);
+		
+		JTextField textKNN = new JTextField(5);
+		textKNN.setBounds(470,200,120,20);
+		
+		JButton button = new JButton("Tweetleri Getir");
+		button.setBounds(350, 227, 150, 30);
+		
+		JButton buttonClassify = new JButton("Tweetleri Sınıflandır");
+		buttonClassify.setBounds(350, 260 , 150, 30);
+		
+		
+		JButton buttonPieChart = new JButton("Pie Chart'ta Göster");	
+		buttonPieChart.setBounds(460, 120, 180, 40);
+		
+		frame.getContentPane().add(label);
+		frame.getContentPane().add(label1);
+		frame.getContentPane().add(button);
+		frame.getContentPane().add(comboBox);
+		frame.getContentPane().add(comboBox1);
+		frame.getContentPane().add(comboBox2);
+		frame.getContentPane().add(buttonClassify);
+		frame.getContentPane().add(label2);
+		frame.getContentPane().add(textCV);
+		frame.getContentPane().add(buttonPieChart);
+		frame.getContentPane().add(label3);
+		frame.getContentPane().add(label4);
+		frame.getContentPane().add(textKNN);
+		label.setBounds(50, 20, 98, 31);
+		frame.getContentPane().add(label);
+		label.setBounds(50, 20, 140, 20);
+		
+		JTextField textDate1 = new JTextField(20);
+		textDate1.setBounds(115, 227, 86, 20);
+		frame.getContentPane().add(textDate1);
+		textDate1.setColumns(10);
+		
+		JButton buttonDate1 = new JButton("Tarih Seçiniz");
+		buttonDate1.setBounds(223, 227, 120, 23);
+		frame.getContentPane().add(buttonDate1);
+		buttonDate1.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				textDate1.setText(new DatePicker(frame).setPickedDate());
+			}
+		});
+		
+		
+		JLabel labelDate1 = new JLabel("Başlangıç Tarihi");
+		labelDate1.setBounds(10, 227, 95, 14);
+		frame.getContentPane().add(labelDate1);
+		
+		JLabel labelDate2 = new JLabel("Bitiş Tarihi");
+		labelDate2.setBounds(10, 264, 86, 14);
+		frame.getContentPane().add(labelDate2);
+		
+		JTextField textDate2 = new JTextField();
+		textDate2.setBounds(115, 261, 86, 20);
+		frame.getContentPane().add(textDate2);
+		textDate2.setColumns(10);
+		
+		JButton buttonDate2 = new JButton("Tarih Seçiniz");
+		buttonDate2.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				
+				textDate2.setText(new DatePicker(frame).setPickedDate());
+			}
+		});
+		buttonDate2.setBounds(223, 261, 120, 23);
+		frame.getContentPane().add(buttonDate2);
+		
+		button.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent arg0) {
+				//JOptionPane.showMessageDialog(frame, "thank you for using java");
+				try {
+					System.out.println(textDate1.getText() + textDate2.getText());
+					new TwitterApplication().retrieve(textDate1.getText(),textDate2.getText(),comboBox1.getSelectedItem().toString());
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+			}
+		});
+		//Sadece naive bayes icin
+		HashMap<String,Double> ar1 = new HashMap<String,Double>();//28 aralik 3 ocak
+		HashMap<String,Double> ar2 = new HashMap<String,Double>();//4 ocak 10 ocak 
+		HashMap<String,Double> ar3 = new HashMap<String,Double>();//6 ocak 
+		HashMap<String,Double> ar4 = new HashMap<String,Double>();//8 ocak
+		
+		buttonClassify.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent arg0){
+				if(comboBox.getSelectedIndex()==0 && comboBox1.getSelectedIndex()==0)//Naive Bayes ve diriliş
+				{
+					if(textDate1.getText().equals("2015-12-28") && textDate2.getText().equals("2016-01-03")){
+					try{
+					BufferedReader datafile = readDataFile("newdosya.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+					Instances data = new Instances(datafile);
+					data.setClassIndex(data.numAttributes() - 1); 
+					percent1 = ApplyNaiveBayes(data,Integer.parseInt(textCV.getText()));
+					ar1.put(comboBox1.getSelectedItem().toString(), percent1);
+					}
+					catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					}
+					else if(textDate1.getText().equals("2016-01-04") && textDate2.getText().equals("2016-01-10")){
+						try{
+							BufferedReader datafile = readDataFile("dirilis4ocak10ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+							Instances data = new Instances(datafile);
+							data.setClassIndex(data.numAttributes() - 1); 
+							percent2 = ApplyNaiveBayes(data,Integer.parseInt(textCV.getText()));
+							ar2.put(comboBox1.getSelectedItem().toString(), percent2);
+							}
+							catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+					}
+					else if(textDate1.getText().equals("2016-01-06") && textDate2.getText().equals("2016-01-06")){
+						try{
+							BufferedReader datafile = readDataFile("dirilis6ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+							Instances data = new Instances(datafile);
+							data.setClassIndex(data.numAttributes() - 1); 
+							percent3 = ApplyNaiveBayes(data,Integer.parseInt(textCV.getText()));
+							ar3.put(comboBox1.getSelectedItem().toString(), percent3);
+							}
+							catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+					}
+					
+				}
+				
+				if(comboBox.getSelectedIndex()==1 && comboBox1.getSelectedIndex()==0)//K Nearest Neighbor ve diriliş
+				{
+					if(textDate1.getText().equals("2015-12-28") && textDate2.getText().equals("2016-01-03")){
+						try{
+						BufferedReader datafile = readDataFile("newdosya.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+						Instances data = new Instances(datafile);
+						data.setClassIndex(data.numAttributes() - 1); 
+						percent1 = ApplyKNN(data,Integer.parseInt(textCV.getText()),Integer.parseInt(textKNN.getText()));
+						
+						}
+						catch (Exception e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+						}
+					else if(textDate1.getText().equals("2016-01-04") && textDate2.getText().equals("2016-01-10")){
+						try{
+							BufferedReader datafile = readDataFile("dirilis4ocak10ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+							Instances data = new Instances(datafile);
+							data.setClassIndex(data.numAttributes() - 1); 
+							percent2 = ApplyKNN(data,Integer.parseInt(textCV.getText()),Integer.parseInt(textKNN.getText()));
+							}
+							catch (Exception e) {
+								// TODO Auto-generated catch block									
+								e.printStackTrace();
+								}
+						}
+				}
+				if(comboBox.getSelectedIndex()==2 && comboBox1.getSelectedIndex()==0)//C4.5 ve diriliş
+				{
+					if(textDate1.getText().equals("2015-12-28") && textDate2.getText().equals("2016-01-03")){
+						try{
+						BufferedReader datafile = readDataFile("newdosya.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+						Instances data = new Instances(datafile);
+						data.setClassIndex(data.numAttributes() - 1); 
+						percent1=ApplyJ48(data,Integer.parseInt(textCV.getText()));
+						}
+						catch (Exception e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+						}
+					else if(textDate1.getText().equals("2016-01-04") && textDate2.getText().equals("2016-01-10")){
+						try{
+							BufferedReader datafile = readDataFile("dirilis4ocak10ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+							Instances data = new Instances(datafile);
+							data.setClassIndex(data.numAttributes() - 1); 
+							percent2=ApplyJ48(data,Integer.parseInt(textCV.getText()));
+							}
+						catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+					}
+				}	
+				
+								
+				if(comboBox.getSelectedIndex()==0 && comboBox1.getSelectedIndex()==1)//Naive Bayes ve Güldür güldür
+				{
+					if(textDate1.getText().equals("2015-12-28") && textDate2.getText().equals("2016-01-03")){
+					try{
+					BufferedReader datafile = readDataFile("guldur28aralik3ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+					Instances data = new Instances(datafile);
+					data.setClassIndex(data.numAttributes() - 1); 
+					percent1=ApplyNaiveBayes(data,Integer.parseInt(textCV.getText()));
+					ar1.put(comboBox1.getSelectedItem().toString(), percent1);
+					}
+					catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					}
+					else if(textDate1.getText().equals("2016-01-04") && textDate2.getText().equals("2016-01-10")){
+						try{
+							BufferedReader datafile = readDataFile("guldur4ocak10ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+							Instances data = new Instances(datafile);
+							data.setClassIndex(data.numAttributes() - 1); 
+							percent2=ApplyNaiveBayes(data,Integer.parseInt(textCV.getText()));
+							ar2.put(comboBox1.getSelectedItem().toString(), percent2);
+							}
+							catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+					}
+					else if(textDate1.getText().equals("2016-01-08") && textDate2.getText().equals("2016-01-08")){
+						try{
+							BufferedReader datafile = readDataFile("guldur8ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+							Instances data = new Instances(datafile);
+							data.setClassIndex(data.numAttributes() - 1); 
+							percent4 = ApplyNaiveBayes(data,Integer.parseInt(textCV.getText()));
+							ar4.put(comboBox1.getSelectedItem().toString(), percent4);
+							}
+							catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+					}
+					
+				}
+				
+				if(comboBox.getSelectedIndex()==1 && comboBox1.getSelectedIndex()==1)//KNN ve Güldür Güldür
+				{
+					if(textDate1.getText().equals("2015-12-28") && textDate2.getText().equals("2016-01-03")){
+					try{
+					BufferedReader datafile = readDataFile("guldur28aralik3ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+					Instances data = new Instances(datafile);
+					data.setClassIndex(data.numAttributes() - 1); 
+					percent1=ApplyKNN(data,Integer.parseInt(textCV.getText()),Integer.parseInt(textKNN.getText()));
+					}
+					catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					}
+					else if(textDate1.getText().equals("2016-01-04") && textDate2.getText().equals("2016-01-10")){
+						try{
+							BufferedReader datafile = readDataFile("guldur4ocak10ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+							Instances data = new Instances(datafile);
+							data.setClassIndex(data.numAttributes() - 1); 
+							percent2=ApplyKNN(data,Integer.parseInt(textCV.getText()),Integer.parseInt(textKNN.getText()));
+							}
+							catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+					}
+				}
+				
+				if(comboBox.getSelectedIndex()==2 && comboBox1.getSelectedIndex()==1)//C4.5 ve Güldür güldür
+				{
+					if(textDate1.getText().equals("2015-12-28") && textDate2.getText().equals("2016-01-03")){
+					try{
+					BufferedReader datafile = readDataFile("guldur28aralik3ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+					Instances data = new Instances(datafile);
+					data.setClassIndex(data.numAttributes() - 1); 
+					percent1=ApplyJ48(data,Integer.parseInt(textCV.getText()));
+					}
+					catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					}
+					else if(textDate1.getText().equals("2016-01-04") && textDate2.getText().equals("2016-01-10")){
+						try{
+							BufferedReader datafile = readDataFile("guldur4ocak10ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+							Instances data = new Instances(datafile);
+							data.setClassIndex(data.numAttributes() - 1); 
+							percent2=ApplyJ48(data,Integer.parseInt(textCV.getText()));
+							}
+							catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+					}
+					
+					
+				
+				}
+				
+				
+				
+				if(comboBox.getSelectedIndex()==0 && comboBox1.getSelectedIndex()==2)//Naive Bayes ve Kara Sevda
+				{
+					System.out.println(textDate1.getText());
+					System.out.println(textDate2.getText());
+					
+					if(textDate1.getText().equals("2015-12-28") && textDate2.getText().equals("2016-01-03")){
+					System.out.println("Naive Bayes ve Kara Sevda seçildi");	
+					try{
+					BufferedReader datafile = readDataFile("karasevda28aralik3ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+					Instances data = new Instances(datafile);
+					data.setClassIndex(data.numAttributes() - 1); 
+					percent1=ApplyNaiveBayes(data,Integer.parseInt(textCV.getText()));
+					ar1.put(comboBox1.getSelectedItem().toString(), percent1);
+					}
+					catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					}
+					else if(textDate1.getText().equals("2016-01-04") && textDate2.getText().equals("2016-01-10")){
+						try{
+							BufferedReader datafile = readDataFile("karasevda4ocak10ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+							Instances data = new Instances(datafile);
+							data.setClassIndex(data.numAttributes() - 1); 
+							percent2=ApplyNaiveBayes(data,Integer.parseInt(textCV.getText()));
+							ar2.put(comboBox1.getSelectedItem().toString(), percent2);
+							}
+							catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+					}
+					else if(textDate1.getText().equals("2016-01-06") && textDate2.getText().equals("2016-01-06")){
+						try{
+							BufferedReader datafile = readDataFile("karasevda6ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+							Instances data = new Instances(datafile);
+							data.setClassIndex(data.numAttributes() - 1); 
+							percent3 = ApplyNaiveBayes(data,Integer.parseInt(textCV.getText()));
+							ar3.put(comboBox1.getSelectedItem().toString(), percent3);
+							}
+							catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+					}					
+					
+				}
+				if(comboBox.getSelectedIndex()==1 && comboBox1.getSelectedIndex()==2)//KNN ve Kara Sevda
+				{
+					if(textDate1.getText().equals("2015-12-28") && textDate2.getText().equals("2016-01-03")){
+					try{
+					BufferedReader datafile = readDataFile("karasevda28aralik3ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+					Instances data = new Instances(datafile);
+					data.setClassIndex(data.numAttributes() - 1); 
+					percent1=ApplyKNN(data,Integer.parseInt(textCV.getText()),Integer.parseInt(textKNN.getText()));
+					}
+					catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					}
+					
+					else if(textDate1.getText().equals("2016-01-04") && textDate2.getText().equals("2016-01-10")){
+						try{
+							BufferedReader datafile = readDataFile("karasevda4ocak10ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+							Instances data = new Instances(datafile);
+							data.setClassIndex(data.numAttributes() - 1); 
+							percent2=ApplyKNN(data,Integer.parseInt(textCV.getText()),Integer.parseInt(textKNN.getText()));
+							}
+							catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+					}
+				}
+				if(comboBox.getSelectedIndex()==2 && comboBox1.getSelectedIndex()==2)//J48 ve Kara Sevda
+				{
+					if(textDate1.getText().equals("2015-12-28") && textDate2.getText().equals("2016-01-03")){
+					try{
+					BufferedReader datafile = readDataFile("karasevda28aralik3ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+					Instances data = new Instances(datafile);
+					data.setClassIndex(data.numAttributes() - 1); 
+					percent1=ApplyJ48(data,Integer.parseInt(textCV.getText()));
+					}
+					catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					}
+					else if(textDate1.getText().equals("2016-01-04") && textDate2.getText().equals("2016-01-10")){
+						try{
+							BufferedReader datafile = readDataFile("karasevda4ocak10ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+							Instances data = new Instances(datafile);
+							data.setClassIndex(data.numAttributes() - 1); 
+							percent2=ApplyJ48(data,Integer.parseInt(textCV.getText()));
+							}
+							catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+					}
+				}
+				
+				
+				if(comboBox.getSelectedIndex()==0 && comboBox1.getSelectedIndex()==3)//Naive Bayes ve Poyraz Karayel
+				{
+					if(textDate1.getText().equals("2015-12-28") && textDate2.getText().equals("2016-01-03")){
+					try{
+					BufferedReader datafile = readDataFile("poyrazkarayel28aralik3ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+					Instances data = new Instances(datafile);
+					data.setClassIndex(data.numAttributes() - 1); 
+					percent1=ApplyNaiveBayes(data,Integer.parseInt(textCV.getText()));
+					ar1.put(comboBox1.getSelectedItem().toString(), percent1);
+					}
+					catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					}
+					else if(textDate1.getText().equals("2016-01-04") && textDate2.getText().equals("2016-01-10")){
+						try{
+							BufferedReader datafile = readDataFile("poyrazkarayel4ocak10ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+							Instances data = new Instances(datafile);
+							data.setClassIndex(data.numAttributes() - 1); 
+							percent2=ApplyNaiveBayes(data,Integer.parseInt(textCV.getText()));
+							ar2.put(comboBox1.getSelectedItem().toString(), percent2);
+							}
+							catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+					}
+					else if(textDate1.getText().equals("2016-01-06") && textDate2.getText().equals("2016-01-06")){
+						try{
+							BufferedReader datafile = readDataFile("poyrazkarayel6ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+							Instances data = new Instances(datafile);
+							data.setClassIndex(data.numAttributes() - 1); 
+							percent3 = ApplyNaiveBayes(data,Integer.parseInt(textCV.getText()));
+							ar3.put(comboBox1.getSelectedItem().toString(), percent3);
+							}
+							catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+					}
+					
+				}	
+				
+				if(comboBox.getSelectedIndex()==1 && comboBox1.getSelectedIndex()==3)//KNN ve Poyraz Karayel
+				{
+					if(textDate1.getText().equals("2015-12-28") && textDate2.getText().equals("2016-01-03")){
+					try{
+					BufferedReader datafile = readDataFile("poyrazkarayel28aralik3ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+					Instances data = new Instances(datafile);
+					data.setClassIndex(data.numAttributes() - 1); 
+					percent1=ApplyKNN(data,Integer.parseInt(textCV.getText()),Integer.parseInt(textKNN.getText()));
+					}
+					catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					}
+					else if(textDate1.getText().equals("2016-01-04") && textDate2.getText().equals("2016-01-10")){
+						try{
+							BufferedReader datafile = readDataFile("poyrazkarayel4ocak10ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+							Instances data = new Instances(datafile);
+							data.setClassIndex(data.numAttributes() - 1); 
+							percent2=ApplyKNN(data,Integer.parseInt(textCV.getText()),Integer.parseInt(textKNN.getText()));
+							}
+							catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+					}
+				}
+				
+				if(comboBox.getSelectedIndex()==2 && comboBox1.getSelectedIndex()==3)//C4.5 ve Poyraz Karayel
+				{
+					if(textDate1.getText().equals("2015-12-28") && textDate2.getText().equals("2016-01-03")){
+					try{
+					BufferedReader datafile = readDataFile("poyrazkarayel28aralik3ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+					Instances data = new Instances(datafile);
+					data.setClassIndex(data.numAttributes() - 1); 
+					percent1=ApplyJ48(data,Integer.parseInt(textCV.getText()));
+					}
+					catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					}
+					else if(textDate1.getText().equals("2016-01-04") && textDate2.getText().equals("2016-01-10")){
+						try{
+							BufferedReader datafile = readDataFile("poyrazkarayel4ocak10ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+							Instances data = new Instances(datafile);
+							data.setClassIndex(data.numAttributes() - 1); 
+							percent2=ApplyJ48(data,Integer.parseInt(textCV.getText()));
+							}
+							catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+					}
+				}
+				
+				if(comboBox.getSelectedIndex()==0 && comboBox1.getSelectedIndex()==4)//Naive Bayes ve Seksenler
+				{
+					if(textDate1.getText().equals("2015-12-28") && textDate2.getText().equals("2016-01-03")){
+					try{
+					BufferedReader datafile = readDataFile("seksenler28aralik3ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+					Instances data = new Instances(datafile);
+					data.setClassIndex(data.numAttributes() - 1); 
+					percent1=ApplyNaiveBayes(data,Integer.parseInt(textCV.getText()));
+					ar1.put(comboBox1.getSelectedItem().toString(), percent1);
+					}
+					catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					}
+					
+					else if(textDate1.getText().equals("2016-01-04") && textDate2.getText().equals("2016-01-10")){
+						try{
+							BufferedReader datafile = readDataFile("seksenler4ocak10ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+							Instances data = new Instances(datafile);
+							data.setClassIndex(data.numAttributes() - 1); 
+							percent2=ApplyNaiveBayes(data,Integer.parseInt(textCV.getText()));
+							ar2.put(comboBox1.getSelectedItem().toString(), percent2);
+							}
+							catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+					}
+					
+					
+					
+				}	
+				
+				if(comboBox.getSelectedIndex()==1 && comboBox1.getSelectedIndex()==4)//KNN ve Seksenler
+				{
+					if(textDate1.getText().equals("2015-12-28") && textDate2.getText().equals("2016-01-03")){
+					try{
+					BufferedReader datafile = readDataFile("seksenler28aralik3ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+					Instances data = new Instances(datafile);
+					data.setClassIndex(data.numAttributes() - 1); 
+					percent1=ApplyKNN(data,Integer.parseInt(textCV.getText()),Integer.parseInt(textKNN.getText()));
+					
+					}
+					catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					}
+					else if(textDate1.getText().equals("2016-01-04") && textDate2.getText().equals("2016-01-10")){
+						try{
+							BufferedReader datafile = readDataFile("seksenler4ocak10ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+							Instances data = new Instances(datafile);
+							data.setClassIndex(data.numAttributes() - 1); 
+							percent2=ApplyKNN(data,Integer.parseInt(textCV.getText()),Integer.parseInt(textKNN.getText()));
+							
+							}
+							catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+					}
+				}
+				
+				if(comboBox.getSelectedIndex()==2 && comboBox1.getSelectedIndex()==4)//C4.5 ve Seksenler
+				{	if(textDate1.getText().equals("2015-12-28") && textDate2.getText().equals("2016-01-03")){
+					try{
+					BufferedReader datafile = readDataFile("seksenler28aralik3ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+					Instances data = new Instances(datafile);
+					data.setClassIndex(data.numAttributes() - 1); 
+					percent1=ApplyJ48(data,Integer.parseInt(textCV.getText()));
+					
+					}
+					catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					}
+					else if(textDate1.getText().equals("2016-01-04") && textDate2.getText().equals("2016-01-10")){
+					try{
+						BufferedReader datafile = readDataFile("seksenler4ocak10ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+						Instances data = new Instances(datafile);
+						data.setClassIndex(data.numAttributes() - 1); 
+						percent2=ApplyJ48(data,Integer.parseInt(textCV.getText()));
+						
+						}
+						catch (Exception e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+				}
+					
+				}
+				
+				if(comboBox.getSelectedIndex()==0 && comboBox1.getSelectedIndex()==5)//Naive Bayes ve Eşkıya
+				{
+					if(textDate1.getText().equals("2015-12-28") && textDate2.getText().equals("2016-01-03")){
+					try{
+					BufferedReader datafile = readDataFile("eskiyadunya28aralik3ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+					Instances data = new Instances(datafile);
+					data.setClassIndex(data.numAttributes() - 1); 
+					percent1=ApplyNaiveBayes(data,Integer.parseInt(textCV.getText()));
+					ar1.put(comboBox1.getSelectedItem().toString(), percent1);
+					}
+					catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					}
+					else if(textDate1.getText().equals("2016-01-04") && textDate2.getText().equals("2016-01-10")){
+						try{
+							BufferedReader datafile = readDataFile("eskiyadunya4ocak10ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+							Instances data = new Instances(datafile);
+							data.setClassIndex(data.numAttributes() - 1); 
+							percent2=ApplyNaiveBayes(data,Integer.parseInt(textCV.getText()));
+							ar2.put(comboBox1.getSelectedItem().toString(), percent2);
+							}
+							catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+					}
+				}	
+				
+				if(comboBox.getSelectedIndex()==1 && comboBox1.getSelectedIndex()==5)//KNN ve Eşkıya
+				{
+					if(textDate1.getText().equals("2015-12-28") && textDate2.getText().equals("2016-01-03")){
+					try{
+					BufferedReader datafile = readDataFile("eskiyadunya28aralik3ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+					Instances data = new Instances(datafile);
+					data.setClassIndex(data.numAttributes() - 1); 
+					percent1=ApplyKNN(data,Integer.parseInt(textCV.getText()),Integer.parseInt(textKNN.getText()));
+					}
+					catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					}
+					else if(textDate1.getText().equals("2016-01-04") && textDate2.getText().equals("2016-01-10")){
+						try{
+							BufferedReader datafile = readDataFile("eskiyadunya4ocak10ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+							Instances data = new Instances(datafile);
+							data.setClassIndex(data.numAttributes() - 1); 
+							percent2=ApplyKNN(data,Integer.parseInt(textCV.getText()),Integer.parseInt(textKNN.getText()));
+							}
+							catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+					}
+				}
+				
+				if(comboBox.getSelectedIndex()==2 && comboBox1.getSelectedIndex()==5)//C4.5 ve Eşkıya
+				{
+					if(textDate1.getText().equals("2015-12-28") && textDate2.getText().equals("2016-01-03")){
+					try{
+					BufferedReader datafile = readDataFile("eskiyadunya28aralik3ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+					Instances data = new Instances(datafile);
+					data.setClassIndex(data.numAttributes() - 1); 
+					percent1=ApplyJ48(data,Integer.parseInt(textCV.getText()));
+					}
+					catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					}
+					else if(textDate1.getText().equals("2016-01-04") && textDate2.getText().equals("2016-01-10")){
+						try{
+							BufferedReader datafile = readDataFile("eskiyadunya4ocak10ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+							Instances data = new Instances(datafile);
+							data.setClassIndex(data.numAttributes() - 1); 
+							percent2=ApplyJ48(data,Integer.parseInt(textCV.getText()));
+							}
+							catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+					}
+				}
+				
+				if(comboBox.getSelectedIndex()==0 && comboBox1.getSelectedIndex()==6)//Naive Bayes ve Arka Sokaklar
+				{
+					if(textDate1.getText().equals("2015-12-28") && textDate2.getText().equals("2016-01-03")){
+					try{
+					BufferedReader datafile = readDataFile("arkasokaklar28aralik3ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+					Instances data = new Instances(datafile);
+					data.setClassIndex(data.numAttributes() - 1); 
+					percent1=ApplyNaiveBayes(data,Integer.parseInt(textCV.getText()));
+					ar1.put(comboBox1.getSelectedItem().toString(), percent1);
+					}
+					catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					}
+					else if(textDate1.getText().equals("2016-01-04") && textDate2.getText().equals("2016-01-10")){
+						try{
+							BufferedReader datafile = readDataFile("arkasokaklar4ocak10ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+							Instances data = new Instances(datafile);
+							data.setClassIndex(data.numAttributes() - 1); 
+							percent2=ApplyNaiveBayes(data,Integer.parseInt(textCV.getText()));
+							ar2.put(comboBox1.getSelectedItem().toString(), percent2);
+							}
+							catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+					}
+					else if(textDate1.getText().equals("2016-01-08") && textDate2.getText().equals("2016-01-08")){
+						try{
+							BufferedReader datafile = readDataFile("arkasokaklar8ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+							Instances data = new Instances(datafile);
+							data.setClassIndex(data.numAttributes() - 1); 
+							percent4 = ApplyNaiveBayes(data,Integer.parseInt(textCV.getText()));
+							ar4.put(comboBox1.getSelectedItem().toString(), percent4);
+							}
+							catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+					}
+				}	
+				
+				if(comboBox.getSelectedIndex()==1 && comboBox1.getSelectedIndex()==6)//KNN ve Arka Sokaklar
+				{
+					if(textDate1.getText().equals("2015-12-28") && textDate2.getText().equals("2016-01-03")){
+					try{
+					BufferedReader datafile = readDataFile("arkasokaklar28aralik3ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+					Instances data = new Instances(datafile);
+					data.setClassIndex(data.numAttributes() - 1); 
+					percent1=ApplyKNN(data,Integer.parseInt(textCV.getText()),Integer.parseInt(textKNN.getText()));
+					}
+					catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					}
+					else if(textDate1.getText().equals("2016-01-04") && textDate2.getText().equals("2016-01-10")){
+						try{
+							BufferedReader datafile = readDataFile("arkasokaklar4ocak10ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+							Instances data = new Instances(datafile);
+							data.setClassIndex(data.numAttributes() - 1); 
+							percent2=ApplyKNN(data,Integer.parseInt(textCV.getText()),Integer.parseInt(textKNN.getText()));
+							}
+							catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+					}
+				}
+				
+				if(comboBox.getSelectedIndex()==2 && comboBox1.getSelectedIndex()==6)//C4.5 ve Arka sokaklar
+				{
+					if(textDate1.getText().equals("2015-12-28") && textDate2.getText().equals("2016-01-03")){
+					try{
+					BufferedReader datafile = readDataFile("arkasokaklar28aralik3ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+					Instances data = new Instances(datafile);
+					data.setClassIndex(data.numAttributes() - 1); 
+					percent1=ApplyJ48(data,Integer.parseInt(textCV.getText()));
+					}
+					catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					}
+					else if(textDate1.getText().equals("2016-01-04") && textDate2.getText().equals("2016-01-10")){
+						try{
+							BufferedReader datafile = readDataFile("arkasokaklar4ocak10ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+							Instances data = new Instances(datafile);
+							data.setClassIndex(data.numAttributes() - 1); 
+							percent2=ApplyJ48(data,Integer.parseInt(textCV.getText()));
+							}
+							catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+					}
+				}
+				
+				if(comboBox.getSelectedIndex()==0 && comboBox1.getSelectedIndex()==7)//Naive Bayes ve Kırgın cicekler
+				{
+					if(textDate1.getText().equals("2015-12-28") && textDate2.getText().equals("2016-01-03")){
+					try{
+					BufferedReader datafile = readDataFile("kirgincicekler28aralik3ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+					Instances data = new Instances(datafile);
+					data.setClassIndex(data.numAttributes() - 1); 
+					percent1=ApplyNaiveBayes(data,Integer.parseInt(textCV.getText()));
+					ar1.put(comboBox1.getSelectedItem().toString(), percent1);
+					}
+					catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					}
+					else if(textDate1.getText().equals("2016-01-04") && textDate2.getText().equals("2016-01-10")){
+						try{
+							BufferedReader datafile = readDataFile("kirgincicekler4ocak10ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+							Instances data = new Instances(datafile);
+							data.setClassIndex(data.numAttributes() - 1); 
+							percent2=ApplyNaiveBayes(data,Integer.parseInt(textCV.getText()));
+							ar2.put(comboBox1.getSelectedItem().toString(), percent2);
+							}
+							catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+					}
+				}	
+				
+				if(comboBox.getSelectedIndex()==1 && comboBox1.getSelectedIndex()==7)//KNN ve Kirgin cicekler
+				{
+					if(textDate1.getText().equals("2015-12-28") && textDate2.getText().equals("2016-01-03")){
+					try{
+					BufferedReader datafile = readDataFile("kirgincicekler28aralik3ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+					Instances data = new Instances(datafile);
+					data.setClassIndex(data.numAttributes() - 1); 
+					percent1=ApplyKNN(data,Integer.parseInt(textCV.getText()),Integer.parseInt(textKNN.getText()));
+					}
+					catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					}
+					else if(textDate1.getText().equals("2016-01-04") && textDate2.getText().equals("2016-01-10")){
+						try{
+							BufferedReader datafile = readDataFile("kirgincicekler4ocak10ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+							Instances data = new Instances(datafile);
+							data.setClassIndex(data.numAttributes() - 1); 
+							percent2=ApplyKNN(data,Integer.parseInt(textCV.getText()),Integer.parseInt(textKNN.getText()));
+							}
+							catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+					}
+				}
+				
+				if(comboBox.getSelectedIndex()==2 && comboBox1.getSelectedIndex()==7)//C4.5 ve Kirgin cicekler
+				{
+					if(textDate1.getText().equals("2015-12-28") && textDate2.getText().equals("2016-01-03")){
+					try{
+					BufferedReader datafile = readDataFile("kirgincicekler28aralik3ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+					Instances data = new Instances(datafile);
+					data.setClassIndex(data.numAttributes() - 1); 
+					percent1=ApplyJ48(data,Integer.parseInt(textCV.getText()));
+					}
+					catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					}
+					else if(textDate1.getText().equals("2016-01-04") && textDate2.getText().equals("2016-01-10")){
+						try{
+							BufferedReader datafile = readDataFile("kirgincicekler4ocak10ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+							Instances data = new Instances(datafile);
+							data.setClassIndex(data.numAttributes() - 1); 
+							percent2=ApplyJ48(data,Integer.parseInt(textCV.getText()));
+							}
+							catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+					}
+				}								
+				
+			}
+			
+		});
+		
+		buttonPieChart.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent arg0) {
+				if(comboBox2.getSelectedIndex()==0){ //28aralik-3ocak
+				PieChart pc = new PieChart("Haftalık Görünüm","Hangi dizi daha çok olumlu tweet topladı?");
+				
+				//new PieChart("Haftalık Görünüm","Hangi dizi daha çok olumlu tweet topladı?").createDataset(ar1);
+				JFreeChart chart = pc.createChart(pc.createDataset(ar1),"Haftalık Görünüm");
+				ChartPanel chartPanel = new ChartPanel(chart);
+		        // default size
+		        chartPanel.setPreferredSize(new java.awt.Dimension(500, 270));
+		        // add it to our application
+		        pc.setContentPane(chartPanel);
+		        
+				pc.pack();
+				pc.setVisible(true);
+				}
+				else if(comboBox2.getSelectedIndex()==1){//4ocak-10ocak
+					PieChart pc = new PieChart("Haftalık Görünüm","Hangi dizi daha çok olumlu tweet topladı?");
+					
+					//new PieChart("Haftalık Görünüm","Hangi dizi daha çok olumlu tweet topladı?").createDataset(ar1);
+					JFreeChart chart = pc.createChart(pc.createDataset(ar2),"Haftalık Görünüm");
+					ChartPanel chartPanel = new ChartPanel(chart);
+			        // default size
+			        chartPanel.setPreferredSize(new java.awt.Dimension(500, 270));
+			        // add it to our application
+			        pc.setContentPane(chartPanel);
+			        
+					pc.pack();
+					pc.setVisible(true);
+						
+				}
+				else if(comboBox2.getSelectedIndex()==2){//6 ocak
+					PieChart pc = new PieChart("6 Ocak","Hangi dizi daha çok olumlu tweet topladı?");
+					
+					//new PieChart("Haftalık Görünüm","Hangi dizi daha çok olumlu tweet topladı?").createDataset(ar1);
+					JFreeChart chart = pc.createChart(pc.createDataset(ar3),"6 Ocak");
+					ChartPanel chartPanel = new ChartPanel(chart);
+			        // default size
+			        chartPanel.setPreferredSize(new java.awt.Dimension(500, 270));
+			        // add it to our application
+			        pc.setContentPane(chartPanel);
+			        
+					pc.pack();
+					pc.setVisible(true);
+						
+				}
+				else if(comboBox2.getSelectedIndex()==3){//8 ocak
+					PieChart pc = new PieChart("8 Ocak","Hangi dizi daha çok olumlu tweet topladı?");
+					
+					//new PieChart("Haftalık Görünüm","Hangi dizi daha çok olumlu tweet topladı?").createDataset(ar1);
+					JFreeChart chart = pc.createChart(pc.createDataset(ar4),"8 Ocak");
+					ChartPanel chartPanel = new ChartPanel(chart);
+			        // default size
+			        chartPanel.setPreferredSize(new java.awt.Dimension(500, 270));
+			        // add it to our application
+			        pc.setContentPane(chartPanel);
+			        
+					pc.pack();
+					pc.setVisible(true);
+						
+				}
+				
+				
+		}});
+		
+		
+		
+		//Tweetleri cekiyoruz
+		//
 		//new TwitterApplication().retrieve();
+		
+		 
 		
 	/*	TurkishMorphParser parser;
 		try {
@@ -85,90 +1118,60 @@ public class TwitterApplication {
 		
 	    
 		//d.addTweets();	
-	//	d.showTweets();
+	    //d.showTweets();
 		
 		//d.dropTweetTable();
 		
 		
-		BufferedReader datafile = readDataFile("dosya.txt");
+		BufferedReader datafile = readDataFile("newdosya.txt");
+		//BufferedReader datafile2 = readDataFile("karasevda.txt");
+		//BufferedReader datafile3 = readDataFile("poyrazkarayel.txt");
+		
+		
 		 
 		Instances data = new Instances(datafile);
-		data.setClassIndex(data.numAttributes() - 1);
+		data.setClassIndex(data.numAttributes() - 1); 
+		
+	    //ApplyNaiveBayes(data);  
+	    
+	    //ApplyKNN(data);
+	    //ApplySVM(data);
+	    
  
-		// Do 10-split cross validation
-		   //Instances[][] split = crossValidationSplit(data, 10);
- 
-		// Separate split into training and testing arrays
-		  //Instances[] trainingSplits = split[0];
-	     //Instances[] testingSplits = split[1];
-		
-		SimpleKMeans kMeans = new SimpleKMeans();
-		kMeans.setNumClusters(3);
-		kMeans.buildClusterer(data);
-		
-		Instances centroids = kMeans.getClusterCentroids();
-		
-		for (int i = 0; i < centroids.numInstances(); i++) { 
-		      System.out.println( "Centroid " + i+1 + ": " + centroids.instance(i)); 
-		}
-		
-		for (int i = 0; i < data.numInstances(); i++) { 
-		      System.out.println( data.instance(i) + " is in cluster " + kMeans.clusterInstance(data.instance(i)) + 1); 
-
-		} 
-
-		
-		Instance first = data.instance(0);
-		Instance second = data.instance(1);
-		data.delete(0);
-		data.delete(1);
-		
-		Classifier ibk = new IBk();
-		ibk.buildClassifier(data);
-		
-		double class1 = ibk.classifyInstance(first);
-		double class2 = ibk.classifyInstance(second);
-		
-		System.out.println("first: " + class1 + "\nsecond: " + class2);
-		
-		// Use a set of classifiers
-			/*	Classifier[] models = { 
-						new J48(), // a decision tree
-						new PART(), 
-						new DecisionTable(),//decision table majority classifier
-						new DecisionStump() //one-level decision tree
-				};
-				
-				// Run for each model
-				for (int j = 0; j < models.length; j++) {
-		 
-					// Collect every group of predictions for current model in a FastVector
-					FastVector predictions = new FastVector();
-		 
-					// For each training-testing split pair, train and test the classifier
-					for (int i = 0; i < trainingSplits.length; i++) {
-						Evaluation validation = classify(models[j], trainingSplits[i], testingSplits[i]);
-		 
-						//predictions.appendElements(validation.predictions());
-		 
-						// Uncomment to see the summary for each training-testing pair.
-						System.out.println(models[j].toString());
-					}
-		 
-					// Calculate overall accuracy of current classifier on all splits
-					double accuracy = calculateAccuracy(predictions);
-		 
-					// Print current classifier's name and accuracy in a complicated,
-					// but nice-looking way.
-					System.out.println("Accuracy of " + models[j].getClass().getSimpleName() + ": "
-							+ String.format("%.2f%%", accuracy)
-							+ "\n---------------------------------");
-				} */
-		
+		StringToWordVector swv = new StringToWordVector();
+        swv.setInputFormat(data);
+        Instances dataFiltered = Filter.useFilter(data, swv);
+        //System.out.println("Filtered data " +dataFiltered.toString());
+        
+        //System.out.println("\n\nFiltered data:\n\n" + dataFiltered);
+      
 		
 	}
 	
-	public void retrieve() throws IOException{
+	  
+
+	  /**
+	   * Method that deletes all non-letters from a string, and lowercases it.
+	   */
+	 //Tweetleri temizliyor büyük harfleri,rakamlari ve noktalama işaretlerini elimimine ediyor.
+	 public String cleanupString(String messageText) {
+		//messageText = messageText.replaceAll("(.)\\1{1,}", "$1"); 	 //tekrarlanan karakterleri cikariyor
+	    char[] result = new char[messageText.length()];
+	    int position = 0;
+
+	    for (int i = 0; i < messageText.length(); i++) {
+	      if (Character.isLetter(messageText.charAt(i)) ||
+	        Character.isWhitespace(messageText.charAt(i))) {
+	        result[position++] = Character.toLowerCase(messageText.charAt(i));
+	      }
+	    }
+	    return new String(result);
+	  } 
+
+
+
+	
+	public void retrieve(String date1, String date2, String programName) throws IOException{
 		logger.info("Retrieving tweets...");
 		ConfigurationBuilder builder = new ConfigurationBuilder();
 		builder.setOAuthConsumerKey(CONSUMER_KEY);
@@ -187,13 +1190,16 @@ public class TwitterApplication {
 		
 		//String user = "Ahmet_Karabas";
 		
+		//Tweetleri dosyaya yazmak icin
+		FileWriter out = new FileWriter("out.txt");
+		String newLine = System.getProperty("line.separator");
 		
-		Query query = new Query("diriliş ertuğrul" + " -filter:retweets -filter:links -filter:replies -filter:images -filter:mentions"); //
+		Query query = new Query(programName + " -filter:retweets -filter:links -filter:replies -filter:images -filter:mentions"); //
 		//hashtagler icin de arastir
 		
 		Date date=new Date();
-		String modifiedDate= new SimpleDateFormat("2015-12-15").format(date);
-		String modifiedDate2= new SimpleDateFormat("2015-12-18" ).format(date);
+		String modifiedDate= new SimpleDateFormat(date1).format(date);  //
+		String modifiedDate2= new SimpleDateFormat(date2).format(date);
         query.setSince(modifiedDate);
         query.setUntil(modifiedDate2);
         
@@ -250,32 +1256,46 @@ public class TwitterApplication {
 		String tweetLabel;
 		
 		String msg = tweet.getText();
+		//String msg = parse(tweet.getText());
+		//out.write(msg);   // dosyaya yazmak icindi
+				
+		System.out.println(cleanupString(msg)); //yeni
+		msg = cleanupString(msg);
 		
 		String[] input = msg.split(" ");
+		//out.write("\""+cleanupString(msg)+"\""+newLine);
+		out.write("\"");
 		for(int j = 0;  j < input.length; j++)
 		{
-		System.out.println(input[j]);
-		input[j].contains("");
-		new ParseWords(parser).parse(input[j]);
+			
+		List<MorphParse> parses = parser.parse(input[j]);
+	    for (MorphParse parse : parses) {
+	            System.out.println(parse.root);
+	            out.write(parse.root);
+	    
+	    } 
+	    out.write("\""+newLine);
+	    
+		//new ParseWords(parser).parse(input[j]);
 		ResultSet rs = st.executeQuery("select * from symbols");
 		while(rs.next()){
-		System.out.println("Db den " +rs.getString("symbol_name"));
+		//System.out.println("Db den " +rs.getString("symbol_name"));
 		if(input[j].contains(rs.getString("symbol_name"))){
 			tweetPoint=tweetPoint+rs.getInt(3);
 		}
 		}
-		System.out.println("puanımız "+tweetPoint);
+		//System.out.println("puan�m�z "+tweetPoint);
 		
 		}
 		
 		
 		
 		//List<MorphParse> parses = parser.parse(tweet.getText());
-		//System.out.println("Kelime kökü"+parses);
+		//System.out.println("Kelime k�k�"+parses);
 		
 		/*for(MorphParse parse : parses)
 		{
-			System.out.println("Kelime kökü" +parse.formatLong());
+			System.out.println("Kelime k�k�" +parse.formatLong());
 		} */
 		
 		
@@ -353,10 +1373,10 @@ public class TwitterApplication {
 		System.out.println("En cok bulunan hashtag: " + maxHashtag);
 		 
 		//En cok bulunan hashtag ile yeniden aratiliyor
-		Query queryNew = new Query(maxHashtag + " -filter:retweets -filter:links -filter:replies -filter:images -filter:mentions");
+		Query queryNew = new Query(maxHashtag + " -filter:retweets -filter:links -filter:replies -filter:images -filter:mentions - filter:hashtags");
 		
-		String modifiedDate3= new SimpleDateFormat("2015-12-15").format(date);
-		String modifiedDate4= new SimpleDateFormat("2015-12-18" ).format(date);
+		String modifiedDate3= new SimpleDateFormat(date1).format(date);
+		String modifiedDate4= new SimpleDateFormat(date2).format(date);
         queryNew.setSince(modifiedDate3);
         queryNew.setUntil(modifiedDate4);
         
@@ -376,19 +1396,28 @@ public class TwitterApplication {
 					
 			for (Status tweet : result2.getTweets()) {	//her tweet icin
 							
-				tweetList2.add(tweet.getText());			
+				if(!tweetList.contains(tweet.getText())) //tweetlistte yoksa ekliyor, varsa eklemiyor
+				tweetList.add(tweet.getText());			
 					
 				
 				tweetPoint = 0;
 				String tweetLabel;
 				
 				String msg2 = tweet.getText();
-				
+				System.out.println(cleanupString(msg2)); // yeni
 				String[] input = msg2.split(" ");
+				out.write("\""+cleanupString(msg2)+"\""+newLine);
+				
 				for(int j = 0;  j < input.length; j++)
 				{
-				System.out.println(input[j]);
-				input[j].contains("");
+					
+				//System.out.println(input[j]);
+				/*List<MorphParse> parses = parser.parse(input[j]);
+				for (MorphParse parse : parses) {
+				System.out.println(parse.root);
+				//out.write(parse.root + newLine);
+				}*/
+				
 				}
 				
 				//Calculating tweet point
@@ -408,9 +1437,7 @@ public class TwitterApplication {
 				
 				d.addTweets(tweetDate,tweet.getRetweetCount(),tweetPoint,tweetLabel);	
 				
-			}
-		
-			
+			}			
 			
 		}
 		 catch (TwitterException e) {
@@ -418,78 +1445,364 @@ public class TwitterApplication {
 				e.printStackTrace();
 				System.out.println("Failed to search tweets" + e.getMessage());
 				
-				}	
-		
+		 }	
 	    
-		d.showTweets();
+		//d.showTweets();
 		logger.info("done! ");
+		out.close();
 			
 	}
 	public java.sql.Date convertJavaDateToSqlDate(java.util.Date date) {
 	    return new java.sql.Date(date.getTime());
 	}
-	
-	public void searchTweets(){
-		
-		
-	}
 	 
-	 void usingWeka() throws Exception
-	 {
-		 InstanceQuery iq = new InstanceQuery();
-		 iq.setUsername("nobody");
-		 iq.setQuery("select * from tweets");
-		 
-		 Instances data = iq.retrieveInstances();
-		 
-		 J48 j48 = new J48();	 
-	 }
 	 
-	 public static BufferedReader readDataFile(String filename) {
+	public static BufferedReader readDataFile(String filename) {
 			BufferedReader inputReader = null;
+			//InputStreamReader myReader = null;
 	 
 			try {
-				inputReader = new BufferedReader(new FileReader(filename));
+				
+				inputReader = new BufferedReader(new InputStreamReader(new FileInputStream(filename), "UTF8"));
+				//myReader = new InputStreamReader(new FileInputStream(filename),"UTF-8");
+				//read data
 			} catch (FileNotFoundException ex) {
 				System.err.println("File not found: " + filename);
+			} catch (UnsupportedEncodingException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 	 
 			return inputReader;
 		}
-	 public static Evaluation classify(Classifier model,
-				Instances trainingSet, Instances testingSet) throws Exception {
-			Evaluation evaluation = new Evaluation(trainingSet);
 	 
-			model.buildClassifier(trainingSet);
-			evaluation.evaluateModel(model, testingSet);
-	 
-			return evaluation;
-		}
-	 
-	 public static double calculateAccuracy(FastVector predictions) {
-			double correct = 0;
-	 
-			for (int i = 0; i < predictions.size(); i++) {
-				NominalPrediction np = (NominalPrediction) predictions.elementAt(i);
-				if (np.predicted() == np.actual()) {
-					correct++;
+	public static double ApplyNaiveBayes(Instances data,int k) throws Exception {
+
+		System.out.println("Applying Naive Bayes \n");
+		
+		int seed=5;
+		Random rand = new Random(seed);   // create seeded number generator
+		Instances randData = new Instances(data);   // create copy of original data
+		randData.randomize(rand);         // randomize data with number generator
+		
+		
+		data.setClassIndex(data.numAttributes() - 1); 
+		StringToWordVector swv = new StringToWordVector();
+		swv.setInputFormat(data);
+		Instances dataFiltered = Filter.useFilter(data, swv);
+		//System.out.println("Filtered data " +dataFiltered.toString());
+
+		System.out.println("\n\nFiltered data:\n\n" + dataFiltered);
+		
+		//set the class index
+	    //dataFiltered.setClassIndex(dataFiltered.numAttributes() - 1);
+	    //build a model -- choose a classifier as you want
+	    NaiveBayes classifier = new NaiveBayes(); 
+	    classifier.buildClassifier(dataFiltered);
+	    Evaluation eval = new Evaluation(dataFiltered);
+	    eval.crossValidateModel(classifier, dataFiltered, k, new Random(1));
+	    //print stats -- do not require to calculate confusion mtx, weka do it!
+	    System.out.println(classifier);
+	    System.out.println(eval.toSummaryString());
+	    System.out.println(eval.toMatrixString());
+	    System.out.println(eval.toClassDetailsString());
+	    System.out.println("Bu dizi hakkında pozitif tweetlerin oranı:" + "%"+eval.truePositiveRate(0)*100);
+	    JOptionPane.showMessageDialog(null, "Doğru sınıflandırma yüzdesi" + "%" + String.format("%.2f", eval.pctCorrect()) 
+	    + "\nBu dizi hakkında doğru sınıflandırılmış pozitif tweetlerin oranı:" + "%"+ String.format("%.2f", eval.truePositiveRate(0)*100) 
+	    + "\nBu dizi hakkında doğru sınıflandırılmış negatif tweetlerin oranı:" + "%" + String.format("%.2f", eval.truePositiveRate(1)*100)
+	    + "\nBu dizi hakkında doğru sınıflandırılmış nötr tweetlerin oranı:" + "%" + String.format("%.2f", eval.truePositiveRate(2)*100));
+		
+	    return Double.parseDouble(String.format("%.2f", eval.truePositiveRate(0)*100));
+		/*
+		Instances[][] split = crossValidationSplit(dataFiltered, k);
+		Instances[] trainingSets = split[0];
+		Instances[] testingSets = split[1];
+
+
+		NaiveBayes classifier = new NaiveBayes(); 
+		// weka.classifiers.functions.supportVector svm = new weka.classifiers.functions.supportVector.;
+
+		//Cross-validation
+
+
+		FastVector predictions = new FastVector();
+		
+
+
+		classifier.buildClassifier(dataFiltered);
+		System.out.println("\n\nClassifier model:\n\n" + classifier);     
+
+		// Test the model
+		for (int i = 0; i < trainingSets.length; i++) {
+			classifier.buildClassifier(trainingSets[i]);
+			// Test the model         
+			Evaluation eTest = new Evaluation(trainingSets[i]);
+			eTest.evaluateModel(classifier, testingSets[i]);
+			
+
+			// Print the result � la Weka explorer:
+			String strSummary = eTest.toSummaryString();
+			System.out.println(strSummary);
+
+			// Get the confusion matrix
+			double[][] cmMatrix = eTest.confusionMatrix();
+			for(int row_i=0; row_i<cmMatrix.length; row_i++){
+				for(int col_i=0; col_i<cmMatrix.length; col_i++){
+					System.out.print(cmMatrix[row_i][col_i]);
+					System.out.print("|");
 				}
+				System.out.println();
 			}
+		} */
+		
+		
+	}
 	 
-			return 100 * correct / predictions.size();
-		}
+	 public static double ApplyKNN(Instances data,int k,int enYakin) throws Exception
+	 {
+		 System.out.println("Applying K Nearest Neighbor\n");
+		 
+		 int seed=5;
+		 Random rand = new Random(seed);   // create seeded number generator
+		 Instances randData = new Instances(data);   // create copy of original data
+		 randData.randomize(rand);         // randomize data with number generator
+		 
+		 data.setClassIndex(data.numAttributes() - 1); 
+		 
+		 StringToWordVector swv = new StringToWordVector();
+         swv.setInputFormat(data);
+         Instances dataFiltered = Filter.useFilter(data, swv);
+         //System.out.println("Filtered data " +dataFiltered.toString());
+         
+         System.out.println("\n\nFiltered data:\n\n" + dataFiltered);
+         
+         
+       //build a model -- choose a classifier as you want
+ 	    IBk classifier = new IBk(enYakin); 
+ 	    classifier.buildClassifier(dataFiltered);
+ 	    Evaluation eval = new Evaluation(dataFiltered);
+ 	    eval.crossValidateModel(classifier, dataFiltered, k, new Random(1));
+ 	    //print stats -- do not require to calculate confusion mtx, weka do it!
+ 	    System.out.println(classifier);
+ 	    System.out.println(eval.toSummaryString());
+ 	    System.out.println(eval.toMatrixString());
+ 	    System.out.println(eval.toClassDetailsString());
+ 	    System.out.println("Bu dizi hakkında pozitif tweetlerin oranı:" + "%"+eval.truePositiveRate(0)*100);
+ 	    JOptionPane.showMessageDialog(null, "Doğru sınıflandırma yüzdesi" + "%" + String.format("%.2f", eval.pctCorrect()) 
+ 	    + "\nBu dizi hakkında pozitif tweetlerin oranı:" + "%"+ String.format("%.2f", eval.truePositiveRate(0)*100));
+         
+ 	     return Double.parseDouble(String.format("%.2f", eval.truePositiveRate(0)*100));
+		 //separating training and test sets 
+         
+         /*
+		 Instances[][] split = crossValidationSplit(dataFiltered, k);
+		 Instances[] trainingSets = split[0];
+		 Instances[] testingSets = split[1];
+		 
+		 
+         IBk classifier = new IBk(); 
+         System.out.println("\n\nClassifier model:" + classifier);     
+
+         for (int i = 0; i < trainingSets.length; i++) {
+         classifier.buildClassifier(trainingSets[i]);
+         // Test the model         
+         Evaluation eTest = new Evaluation(trainingSets[i]);
+         eTest.evaluateModel(classifier, testingSets[i]);
+         
+          // Print the result � la Weka explorer:
+          String strSummary = eTest.toSummaryString();
+          System.out.println(strSummary);
+           
+          // Get the confusion matrix
+          double[][] cmMatrix = eTest.confusionMatrix();
+          for(int row_i=0; row_i<cmMatrix.length; row_i++){
+              for(int col_i=0; col_i<cmMatrix.length; col_i++){
+                  System.out.print(cmMatrix[row_i][col_i]);
+                  System.out.print("|");
+              }
+              System.out.println();
+          }
+          
+          System.out.println(eTest.toClassDetailsString());
+         } */
+	 }
+	 
+	 /*
+	 public static void ApplySVM(Instances data,int k) throws Exception
+	 {
+		 System.out.println("Applying Support Vector Machines");
+		 data.setClassIndex(data.numAttributes() - 1);
+
+		 StringToWordVector swv = new StringToWordVector();
+		 swv.setInputFormat(data);
+		 Instances dataFiltered = Filter.useFilter(data, swv);
+		 //System.out.println("Filtered data " +dataFiltered.toString());
+
+		 System.out.println("\n\nFiltered data:\n\n" + dataFiltered);
+
+		 //separating training and test sets 
+		 Instances[][] split = crossValidationSplit(dataFiltered, k);
+		 Instances[] trainingSets = split[0];
+		 Instances[] testingSets = split[1];
+		 
+		 
+		 //initialize svm classifier
+		 LibSVM classifier = new LibSVM();
+		 
+
+		 classifier.buildClassifier(dataFiltered);
+		 System.out.println("\n\nClassifier model:\n\n" + classifier);    
+
+		 for (int i = 0; i < trainingSets.length; i++) {
+	         classifier.buildClassifier(trainingSets[i]);
+	         // Test the model         
+	         Evaluation eTest = new Evaluation(trainingSets[i]);
+	         eTest.evaluateModel(classifier, testingSets[i]);
+	         
+	          // Print the result � la Weka explorer:
+	          String strSummary = eTest.toSummaryString();
+	          System.out.println(strSummary);
+	           
+	          // Get the confusion matrix
+	          double[][] cmMatrix = eTest.confusionMatrix();
+	          for(int row_i=0; row_i<cmMatrix.length; row_i++){
+	              for(int col_i=0; col_i<cmMatrix.length; col_i++){
+	                  System.out.print(cmMatrix[row_i][col_i]);
+	                  System.out.print("|");
+	              }
+	              System.out.println();
+	          }
+	         }
+	 } */
+	 
+	 
+	 public static double ApplyJ48(Instances data,int k) throws Exception
+	 {
+		 System.out.println("Applying C 4.5 Decision Tree");
+		 String[] options = new String[1]; 
+		 options[0] = "weka.classifiers.trees.j48" + "-C 0.25 -M 2";  
+		 
+		 int seed=5;
+		 Random rand = new Random(seed);   // create seeded number generator
+		 Instances randData = new Instances(data);   // create copy of original data
+		 randData.randomize(rand);         // randomize data with number generator
+		 data.setClassIndex(data.numAttributes() - 1);
+
+		 StringToWordVector swv = new StringToWordVector();
+		 swv.setInputFormat(data);
+		 Instances dataFiltered = Filter.useFilter(data, swv);
+		 //System.out.println("Filtered data " +dataFiltered.toString());
+
+		 System.out.println("\n\nFiltered data:\n\n" + dataFiltered);
+		 
+		//build a model -- choose a classifier as you want
+		    J48 classifier = new J48(); 
+		    classifier.setOptions(options);
+		    classifier.buildClassifier(dataFiltered);
+		    Evaluation eval = new Evaluation(dataFiltered);
+		    eval.crossValidateModel(classifier, dataFiltered, k, new Random(1));
+		    
+		    //print stats -- do not require to calculate confusion mtx, weka do it!
+		    System.out.println(classifier);
+		    System.out.println(eval.toSummaryString());
+		    System.out.println(eval.toMatrixString());
+		    System.out.println(eval.toClassDetailsString());
+		    System.out.println("Bu dizi hakkında pozitif tweetlerin oranı:" + "%"+eval.truePositiveRate(0)*100);
+		    JOptionPane.showMessageDialog(null, "Doğru sınıflandırma yüzdesi" + "%" + String.format("%.2f", eval.pctCorrect()) 
+		    + "\nBu dizi hakkında pozitif tweetlerin oranı:" + "%"+ String.format("%.2f", eval.truePositiveRate(0)*100));
+		    
+		    String cls;
+		    cls=dataFiltered.classAttribute().value((int) classifier.classifyInstance(dataFiltered.instance(1)));
+		    System.out.println("En son " + cls);
+		    
+		    return Double.parseDouble(String.format("%.2f", eval.truePositiveRate(0)*100));
+		 
+		 /*
+		 //separating training and test sets 
+		 Instances[][] split = crossValidationSplit(dataFiltered, k);
+		 Instances[] trainingSets = split[0];
+		 Instances[] testingSets = split[1];
+		 
+		 
+		 //initialize svm classifier
+		 J48 classifier = new J48();
+		 
+
+		 classifier.buildClassifier(dataFiltered);
+		 System.out.println("\n\nClassifier model:\n\n" + classifier);    
+
+		 for (int i = 0; i < trainingSets.length; i++) {
+	         classifier.buildClassifier(trainingSets[i]);
+	         // Test the model         
+	         Evaluation eTest = new Evaluation(trainingSets[i]);
+	         eTest.evaluateModel(classifier, testingSets[i]);
+	         
+	          // Print the result � la Weka explorer:
+	          String strSummary = eTest.toSummaryString();
+	          System.out.println(strSummary);
+	          
+	           
+	          // Get the confusion matrix
+	          double[][] cmMatrix = eTest.confusionMatrix();
+	          for(int row_i=0; row_i<cmMatrix.length; row_i++){
+	              for(int col_i=0; col_i<cmMatrix.length; col_i++){
+	                  System.out.print(cmMatrix[row_i][col_i]);
+	                  System.out.print("|");
+	              }
+	              System.out.println();
+	          }
+	         }*/
+	 }
+	 
+	 
 	 public static Instances[][] crossValidationSplit(Instances data, int numberOfFolds) {
-			Instances[][] split = new Instances[2][numberOfFolds];
-	 
-			for (int i = 0; i < numberOfFolds; i++) {
-				split[0][i] = data.trainCV(numberOfFolds, i);
-				split[1][i] = data.testCV(numberOfFolds, i);
-			}
-	 
-			return split;
+		    Instances[][] split = new Instances[2][numberOfFolds];
+
+		    for (int i = 0; i < numberOfFolds; i++) {
+		        split[0][i] = data.trainCV(numberOfFolds, i);
+		        split[1][i] = data.testCV(numberOfFolds, i);
+		    }
+
+		    return split;
 		}
- 	 
+	 
+	 
+	 TurkishMorphParser parser;
+	 
+
+	 public String parse(String word) {
+		 System.out.println("Word = " + word);
+		 List<MorphParse> parses = parser.parse(word);
+		 for (MorphParse parse : parses) {
+			 System.out.println(parse.root);
+		 }
+		 return word;
+	 }
+
+	 public static void drawPieChart(){
+		 ArrayList<Double> values = new ArrayList<Double>();
+		 values.add(new Double(10));
+		 values.add(new Double(20));
+		 values.add(new Double(30));
+		 values.add(new Double(15));
+		 values.add(new Double(15));
+		  
+		 ArrayList<Color> colors = new ArrayList<Color>();
+		 colors.add(Color.gray);
+		 colors.add(Color.green);
+		 colors.add(Color.blue);
+		 colors.add(Color.pink);
+		 colors.add(Color.yellow);
+		// PieChart pieChart = new PieChart(values, colors);
+		// myPanel.add(pieChart);
+		 
+		 
+	 } 	 
+		 
+	 }
+
+
 	
-}
+
 
 
