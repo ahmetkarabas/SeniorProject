@@ -1,4 +1,5 @@
 import java.io.IOException;
+
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -93,6 +94,7 @@ import java.io.FileWriter;
 
 
 
+
 //Seksenlerde kalindi
 
 public class TwitterApplication implements Serializable {
@@ -134,15 +136,19 @@ public class TwitterApplication implements Serializable {
 		String [] programs = new String[]{"Diriliş Ertuğrul","Güldür Güldür Show","Kara Sevda","Poyraz Karayel",
 				 "Seksenler","Eşkıya Dünyaya Hükümdar Olmaz","Arka Sokaklar","Kırgın Çiçekler"};
 		String [] weeks = new String[]{"28 Aralık-3 Ocak","4 Ocak-10 Ocak","6 Ocak","8 Ocak"};
+		String [] channels = new String[]{"Tüm Kanallar","TRT 1","Kanal D","ATV"};
 		
 		JComboBox<String> comboBox = new JComboBox<String>(classifiers);
 		JComboBox<String> comboBox1 = new JComboBox<String>(programs);
 		JComboBox<String> comboBox2 = new JComboBox<String>(weeks);
+		JComboBox<String> comboBox3 = new JComboBox<String>(channels);
+
  		
 		//comboBox.getSelectedItem();
 		comboBox.setBounds(10, 60, 180, 120);
 		comboBox1.setBounds(200, 60, 220, 120);
-		comboBox2.setBounds(460,50,160,50);
+		comboBox2.setBounds(600,50,120,50);
+		comboBox3.setBounds(460, 50, 120, 50);
 		
 		
 		JLabel label1 = new JLabel("TV Programları");
@@ -154,7 +160,7 @@ public class TwitterApplication implements Serializable {
 		label2.setBounds(10, 200, 130, 20);
 		
 		JLabel label3 = new JLabel("Aralığı Seçiniz");
-		label3.setBounds(480,20,120,20);
+		label3.setBounds(620,20,120,20);
 		
 		JTextField textCV = new JTextField(5);
 		textCV.setBounds(140, 200, 120, 20);
@@ -171,9 +177,13 @@ public class TwitterApplication implements Serializable {
 		JButton buttonClassify = new JButton("Tweetleri Sınıflandır");
 		buttonClassify.setBounds(350, 260 , 150, 30);
 		
-		
 		JButton buttonPieChart = new JButton("Pie Chart'ta Göster");	
-		buttonPieChart.setBounds(460, 120, 180, 40);
+		buttonPieChart.setBounds(460, 120, 260, 40);
+		
+		JLabel label5 = new JLabel("Kanal Seçiniz");
+		label5.setBounds(480,20,120,20);
+		//JButton buttonBarChart = new JButton("Bar Chart'ta Göster");
+		//buttonBarChart.setBounds(650,120,180,40);
 		
 		frame.getContentPane().add(label);
 		frame.getContentPane().add(label1);
@@ -188,6 +198,9 @@ public class TwitterApplication implements Serializable {
 		frame.getContentPane().add(label3);
 		frame.getContentPane().add(label4);
 		frame.getContentPane().add(textKNN);
+		frame.getContentPane().add(label5);
+		frame.getContentPane().add(comboBox3);
+		//frame.getContentPane().add(buttonBarChart);
 		label.setBounds(50, 20, 98, 31);
 		frame.getContentPane().add(label);
 		label.setBounds(50, 20, 140, 20);
@@ -244,24 +257,35 @@ public class TwitterApplication implements Serializable {
 				
 			}
 		});
-		//Sadece naive bayes icin
+		//Piecharttaki veri seti icin
 		HashMap<String,Double> ar1 = new HashMap<String,Double>();//28 aralik 3 ocak
 		HashMap<String,Double> ar2 = new HashMap<String,Double>();//4 ocak 10 ocak 
 		HashMap<String,Double> ar3 = new HashMap<String,Double>();//6 ocak 
 		HashMap<String,Double> ar4 = new HashMap<String,Double>();//8 ocak
+		HashMap<String,Double> ar5 = new HashMap<String,Double>();//28 aralik 3 ocak trt1
+		HashMap<String,Double> ar6 = new HashMap<String,Double>();//28 aralik 3 ocak kanal d
+		HashMap<String,Double> ar7 = new HashMap<String,Double>();//28 aralik 3 ocak atv
+		HashMap<String,Double> ar8 = new HashMap<String,Double>();//4 ocak 10 ocak trt1
+		HashMap<String,Double> ar9 = new HashMap<String,Double>();//4 ocak 10 ocak kanal d
+		HashMap<String,Double> ar10 = new HashMap<String,Double>();//4 ocak 10 ocak atv
 		
 		buttonClassify.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent arg0){
 				if(comboBox.getSelectedIndex()==0 && comboBox1.getSelectedIndex()==0)//Naive Bayes ve diriliş
 				{
-					if(textDate1.getText().equals("2015-12-28") && textDate2.getText().equals("2016-01-03")){
+					if(textDate1.getText().equals("2015-12-28") && textDate2.getText().equals("2016-01-03")){	
 					try{
 					BufferedReader datafile = readDataFile("newdosya.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
 					Instances data = new Instances(datafile);
 					data.setClassIndex(data.numAttributes() - 1); 
 					percent1 = ApplyNaiveBayes(data,Integer.parseInt(textCV.getText()));
-					ar1.put(comboBox1.getSelectedItem().toString(), percent1);
+					if(comboBox3.getSelectedIndex()==0){//bütün kanallar
+					ar1.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+					}
+					else if(comboBox3.getSelectedIndex()==1){//trt1
+					ar5.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+					}
 					}
 					catch (Exception e) {
 						// TODO Auto-generated catch block
@@ -274,7 +298,12 @@ public class TwitterApplication implements Serializable {
 							Instances data = new Instances(datafile);
 							data.setClassIndex(data.numAttributes() - 1); 
 							percent2 = ApplyNaiveBayes(data,Integer.parseInt(textCV.getText()));
-							ar2.put(comboBox1.getSelectedItem().toString(), percent2);
+							if(comboBox3.getSelectedIndex()==0){//bütün kanallar
+							    ar2.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent2*data.numInstances());
+							}
+							else if(comboBox3.getSelectedIndex()==1){//trt1
+								ar8.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+							}							
 							}
 							catch (Exception e) {
 								// TODO Auto-generated catch block
@@ -287,8 +316,9 @@ public class TwitterApplication implements Serializable {
 							Instances data = new Instances(datafile);
 							data.setClassIndex(data.numAttributes() - 1); 
 							percent3 = ApplyNaiveBayes(data,Integer.parseInt(textCV.getText()));
-							ar3.put(comboBox1.getSelectedItem().toString(), percent3);
-							}
+							ar3.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent3*data.numInstances());
+							
+						}
 							catch (Exception e) {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
@@ -305,7 +335,12 @@ public class TwitterApplication implements Serializable {
 						Instances data = new Instances(datafile);
 						data.setClassIndex(data.numAttributes() - 1); 
 						percent1 = ApplyKNN(data,Integer.parseInt(textCV.getText()),Integer.parseInt(textKNN.getText()));
-						
+						if(comboBox3.getSelectedIndex()==0){//bütün kanallar
+							ar1.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+						}
+						else if(comboBox3.getSelectedIndex()==1){//trt1
+							ar5.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+						}
 						}
 						catch (Exception e) {
 							// TODO Auto-generated catch block
@@ -318,12 +353,34 @@ public class TwitterApplication implements Serializable {
 							Instances data = new Instances(datafile);
 							data.setClassIndex(data.numAttributes() - 1); 
 							percent2 = ApplyKNN(data,Integer.parseInt(textCV.getText()),Integer.parseInt(textKNN.getText()));
+							if(comboBox3.getSelectedIndex()==0){//bütün kanallar
+							    ar2.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent2*data.numInstances());
+							}
+							else if(comboBox3.getSelectedIndex()==1){//trt1
+								ar8.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+							}
 							}
 							catch (Exception e) {
 								// TODO Auto-generated catch block									
 								e.printStackTrace();
 								}
 						}
+					else if(textDate1.getText().equals("2016-01-06") && textDate2.getText().equals("2016-01-06")){
+						try{
+							BufferedReader datafile = readDataFile("dirilis6ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+							Instances data = new Instances(datafile);
+							data.setClassIndex(data.numAttributes() - 1); 
+							percent3 = ApplyKNN(data,Integer.parseInt(textCV.getText()),Integer.parseInt(textKNN.getText()));
+							ar3.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent3*data.numInstances());
+							}
+							catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+					}
+					
+					
+					
 				}
 				if(comboBox.getSelectedIndex()==2 && comboBox1.getSelectedIndex()==0)//C4.5 ve diriliş
 				{
@@ -333,6 +390,12 @@ public class TwitterApplication implements Serializable {
 						Instances data = new Instances(datafile);
 						data.setClassIndex(data.numAttributes() - 1); 
 						percent1=ApplyJ48(data,Integer.parseInt(textCV.getText()));
+						if(comboBox3.getSelectedIndex()==0){//bütün kanallar
+							ar1.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+						}
+						else if(comboBox3.getSelectedIndex()==1){//trt1
+							ar5.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+						}
 						}
 						catch (Exception e) {
 							// TODO Auto-generated catch block
@@ -345,12 +408,33 @@ public class TwitterApplication implements Serializable {
 							Instances data = new Instances(datafile);
 							data.setClassIndex(data.numAttributes() - 1); 
 							percent2=ApplyJ48(data,Integer.parseInt(textCV.getText()));
+							if(comboBox3.getSelectedIndex()==0){//bütün kanallar
+							    ar2.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent2*data.numInstances());
+							}
+							else if(comboBox3.getSelectedIndex()==1){//trt1
+								ar8.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+							}
 							}
 						catch (Exception e) {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
 							}
 					}
+					else if(textDate1.getText().equals("2016-01-06") && textDate2.getText().equals("2016-01-06")){
+						try{
+							BufferedReader datafile = readDataFile("dirilis6ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+							Instances data = new Instances(datafile);
+							data.setClassIndex(data.numAttributes() - 1); 
+							percent3 = ApplyJ48(data,Integer.parseInt(textCV.getText()));
+							ar3.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent3*data.numInstances());
+							}
+							catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+					}	
+					
+					
 				}	
 				
 								
@@ -362,7 +446,7 @@ public class TwitterApplication implements Serializable {
 					Instances data = new Instances(datafile);
 					data.setClassIndex(data.numAttributes() - 1); 
 					percent1=ApplyNaiveBayes(data,Integer.parseInt(textCV.getText()));
-					ar1.put(comboBox1.getSelectedItem().toString(), percent1);
+					ar1.put(comboBox1.getSelectedItem().toString() +"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
 					}
 					catch (Exception e) {
 						// TODO Auto-generated catch block
@@ -375,7 +459,7 @@ public class TwitterApplication implements Serializable {
 							Instances data = new Instances(datafile);
 							data.setClassIndex(data.numAttributes() - 1); 
 							percent2=ApplyNaiveBayes(data,Integer.parseInt(textCV.getText()));
-							ar2.put(comboBox1.getSelectedItem().toString(), percent2);
+							ar2.put(comboBox1.getSelectedItem().toString() +"(" + data.numInstances() + " tweet)", percent2*data.numInstances());
 							}
 							catch (Exception e) {
 								// TODO Auto-generated catch block
@@ -388,7 +472,7 @@ public class TwitterApplication implements Serializable {
 							Instances data = new Instances(datafile);
 							data.setClassIndex(data.numAttributes() - 1); 
 							percent4 = ApplyNaiveBayes(data,Integer.parseInt(textCV.getText()));
-							ar4.put(comboBox1.getSelectedItem().toString(), percent4);
+							ar4.put(comboBox1.getSelectedItem().toString() +"(" + data.numInstances() + " tweet)", percent4*data.numInstances());
 							}
 							catch (Exception e) {
 								// TODO Auto-generated catch block
@@ -406,6 +490,7 @@ public class TwitterApplication implements Serializable {
 					Instances data = new Instances(datafile);
 					data.setClassIndex(data.numAttributes() - 1); 
 					percent1=ApplyKNN(data,Integer.parseInt(textCV.getText()),Integer.parseInt(textKNN.getText()));
+					ar1.put(comboBox1.getSelectedItem().toString() +"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
 					}
 					catch (Exception e) {
 						// TODO Auto-generated catch block
@@ -418,12 +503,28 @@ public class TwitterApplication implements Serializable {
 							Instances data = new Instances(datafile);
 							data.setClassIndex(data.numAttributes() - 1); 
 							percent2=ApplyKNN(data,Integer.parseInt(textCV.getText()),Integer.parseInt(textKNN.getText()));
+							ar2.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent2*data.numInstances());
 							}
 							catch (Exception e) {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
 							}
 					}
+					else if(textDate1.getText().equals("2016-01-08") && textDate2.getText().equals("2016-01-08")){
+						try{
+							BufferedReader datafile = readDataFile("guldur8ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+							Instances data = new Instances(datafile);
+							data.setClassIndex(data.numAttributes() - 1); 
+							percent4 = ApplyKNN(data,Integer.parseInt(textCV.getText()),Integer.parseInt(textKNN.getText()));
+							ar4.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent4*data.numInstances());
+							}
+							catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+					}
+					
+					
 				}
 				
 				if(comboBox.getSelectedIndex()==2 && comboBox1.getSelectedIndex()==1)//C4.5 ve Güldür güldür
@@ -434,6 +535,7 @@ public class TwitterApplication implements Serializable {
 					Instances data = new Instances(datafile);
 					data.setClassIndex(data.numAttributes() - 1); 
 					percent1=ApplyJ48(data,Integer.parseInt(textCV.getText()));
+					ar1.put(comboBox1.getSelectedItem().toString() +"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
 					}
 					catch (Exception e) {
 						// TODO Auto-generated catch block
@@ -446,13 +548,26 @@ public class TwitterApplication implements Serializable {
 							Instances data = new Instances(datafile);
 							data.setClassIndex(data.numAttributes() - 1); 
 							percent2=ApplyJ48(data,Integer.parseInt(textCV.getText()));
+							ar2.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent2*data.numInstances());
+							}
+							catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+					}	
+					else if(textDate1.getText().equals("2016-01-08") && textDate2.getText().equals("2016-01-08")){
+						try{
+							BufferedReader datafile = readDataFile("guldur8ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+							Instances data = new Instances(datafile);
+							data.setClassIndex(data.numAttributes() - 1); 
+							percent4 = ApplyJ48(data,Integer.parseInt(textCV.getText()));
+							ar4.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent4*data.numInstances());
 							}
 							catch (Exception e) {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
 							}
 					}
-					
 					
 				
 				}
@@ -471,7 +586,7 @@ public class TwitterApplication implements Serializable {
 					Instances data = new Instances(datafile);
 					data.setClassIndex(data.numAttributes() - 1); 
 					percent1=ApplyNaiveBayes(data,Integer.parseInt(textCV.getText()));
-					ar1.put(comboBox1.getSelectedItem().toString(), percent1);
+					ar1.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
 					}
 					catch (Exception e) {
 						// TODO Auto-generated catch block
@@ -484,7 +599,7 @@ public class TwitterApplication implements Serializable {
 							Instances data = new Instances(datafile);
 							data.setClassIndex(data.numAttributes() - 1); 
 							percent2=ApplyNaiveBayes(data,Integer.parseInt(textCV.getText()));
-							ar2.put(comboBox1.getSelectedItem().toString(), percent2);
+							ar2.put(comboBox1.getSelectedItem().toString() +"(" + data.numInstances() + " tweet)", percent2*data.numInstances());
 							}
 							catch (Exception e) {
 								// TODO Auto-generated catch block
@@ -497,7 +612,7 @@ public class TwitterApplication implements Serializable {
 							Instances data = new Instances(datafile);
 							data.setClassIndex(data.numAttributes() - 1); 
 							percent3 = ApplyNaiveBayes(data,Integer.parseInt(textCV.getText()));
-							ar3.put(comboBox1.getSelectedItem().toString(), percent3);
+							ar3.put(comboBox1.getSelectedItem().toString() +"(" + data.numInstances() + " tweet)", percent3*data.numInstances());
 							}
 							catch (Exception e) {
 								// TODO Auto-generated catch block
@@ -514,6 +629,7 @@ public class TwitterApplication implements Serializable {
 					Instances data = new Instances(datafile);
 					data.setClassIndex(data.numAttributes() - 1); 
 					percent1=ApplyKNN(data,Integer.parseInt(textCV.getText()),Integer.parseInt(textKNN.getText()));
+					ar1.put(comboBox1.getSelectedItem().toString() +"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
 					}
 					catch (Exception e) {
 						// TODO Auto-generated catch block
@@ -527,12 +643,27 @@ public class TwitterApplication implements Serializable {
 							Instances data = new Instances(datafile);
 							data.setClassIndex(data.numAttributes() - 1); 
 							percent2=ApplyKNN(data,Integer.parseInt(textCV.getText()),Integer.parseInt(textKNN.getText()));
+							ar2.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent2*data.numInstances());	
 							}
 							catch (Exception e) {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
 							}
 					}
+					else if(textDate1.getText().equals("2016-01-06") && textDate2.getText().equals("2016-01-06")){
+						try{
+							BufferedReader datafile = readDataFile("karasevda6ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+							Instances data = new Instances(datafile);
+							data.setClassIndex(data.numAttributes() - 1); 
+							percent3 = ApplyKNN(data,Integer.parseInt(textCV.getText()),Integer.parseInt(textKNN.getText()));
+							ar3.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent3*data.numInstances());
+							}
+							catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+					}
+					
 				}
 				if(comboBox.getSelectedIndex()==2 && comboBox1.getSelectedIndex()==2)//J48 ve Kara Sevda
 				{
@@ -542,6 +673,7 @@ public class TwitterApplication implements Serializable {
 					Instances data = new Instances(datafile);
 					data.setClassIndex(data.numAttributes() - 1); 
 					percent1=ApplyJ48(data,Integer.parseInt(textCV.getText()));
+					ar1.put(comboBox1.getSelectedItem().toString() +"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
 					}
 					catch (Exception e) {
 						// TODO Auto-generated catch block
@@ -554,12 +686,28 @@ public class TwitterApplication implements Serializable {
 							Instances data = new Instances(datafile);
 							data.setClassIndex(data.numAttributes() - 1); 
 							percent2=ApplyJ48(data,Integer.parseInt(textCV.getText()));
+							ar2.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent2*data.numInstances());
 							}
 							catch (Exception e) {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
 							}
 					}
+					else if(textDate1.getText().equals("2016-01-06") && textDate2.getText().equals("2016-01-06")){
+						try{
+							BufferedReader datafile = readDataFile("karasevda6ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+							Instances data = new Instances(datafile);
+							data.setClassIndex(data.numAttributes() - 1); 
+							percent3 = ApplyJ48(data,Integer.parseInt(textCV.getText()));
+							ar3.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent3*data.numInstances());
+							}
+							catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+					}
+					
+					
 				}
 				
 				
@@ -571,7 +719,12 @@ public class TwitterApplication implements Serializable {
 					Instances data = new Instances(datafile);
 					data.setClassIndex(data.numAttributes() - 1); 
 					percent1=ApplyNaiveBayes(data,Integer.parseInt(textCV.getText()));
-					ar1.put(comboBox1.getSelectedItem().toString(), percent1);
+					if(comboBox3.getSelectedIndex()==0){//bütün kanallar
+						ar1.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+					}
+					else if(comboBox3.getSelectedIndex()==2){//kanal d 
+						ar6.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+					}
 					}
 					catch (Exception e) {
 						// TODO Auto-generated catch block
@@ -584,8 +737,13 @@ public class TwitterApplication implements Serializable {
 							Instances data = new Instances(datafile);
 							data.setClassIndex(data.numAttributes() - 1); 
 							percent2=ApplyNaiveBayes(data,Integer.parseInt(textCV.getText()));
-							ar2.put(comboBox1.getSelectedItem().toString(), percent2);
+							if(comboBox3.getSelectedIndex()==0){//bütün kanallar
+							    ar2.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent2*data.numInstances());
 							}
+							else if(comboBox3.getSelectedIndex()==2){//kanal d 
+								ar9.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+							}
+						    }
 							catch (Exception e) {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
@@ -597,7 +755,7 @@ public class TwitterApplication implements Serializable {
 							Instances data = new Instances(datafile);
 							data.setClassIndex(data.numAttributes() - 1); 
 							percent3 = ApplyNaiveBayes(data,Integer.parseInt(textCV.getText()));
-							ar3.put(comboBox1.getSelectedItem().toString(), percent3);
+							ar3.put(comboBox1.getSelectedItem().toString() +"(" + data.numInstances() + " tweet)" , percent3*data.numInstances());
 							}
 							catch (Exception e) {
 								// TODO Auto-generated catch block
@@ -615,6 +773,12 @@ public class TwitterApplication implements Serializable {
 					Instances data = new Instances(datafile);
 					data.setClassIndex(data.numAttributes() - 1); 
 					percent1=ApplyKNN(data,Integer.parseInt(textCV.getText()),Integer.parseInt(textKNN.getText()));
+					if(comboBox3.getSelectedIndex()==0){//bütün kanallar
+						ar1.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+					}
+					else if(comboBox3.getSelectedIndex()==2){//kanal d 
+						ar6.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+					}
 					}
 					catch (Exception e) {
 						// TODO Auto-generated catch block
@@ -627,6 +791,25 @@ public class TwitterApplication implements Serializable {
 							Instances data = new Instances(datafile);
 							data.setClassIndex(data.numAttributes() - 1); 
 							percent2=ApplyKNN(data,Integer.parseInt(textCV.getText()),Integer.parseInt(textKNN.getText()));
+							if(comboBox3.getSelectedIndex()==0){//bütün kanallar
+							    ar2.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent2*data.numInstances());
+							}
+							else if(comboBox3.getSelectedIndex()==2){//kanal d 
+								ar9.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+							}
+							}
+							catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+					}
+					else if(textDate1.getText().equals("2016-01-06") && textDate2.getText().equals("2016-01-06")){
+						try{
+							BufferedReader datafile = readDataFile("poyrazkarayel6ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+							Instances data = new Instances(datafile);
+							data.setClassIndex(data.numAttributes() - 1); 
+							percent3 = ApplyKNN(data,Integer.parseInt(textCV.getText()),Integer.parseInt(textKNN.getText()));
+							ar3.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent3*data.numInstances());
 							}
 							catch (Exception e) {
 								// TODO Auto-generated catch block
@@ -643,6 +826,12 @@ public class TwitterApplication implements Serializable {
 					Instances data = new Instances(datafile);
 					data.setClassIndex(data.numAttributes() - 1); 
 					percent1=ApplyJ48(data,Integer.parseInt(textCV.getText()));
+					if(comboBox3.getSelectedIndex()==0){//bütün kanallar
+						ar1.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+					}
+					else if(comboBox3.getSelectedIndex()==2){//kanal d 
+						ar6.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+					}
 					}
 					catch (Exception e) {
 						// TODO Auto-generated catch block
@@ -655,28 +844,53 @@ public class TwitterApplication implements Serializable {
 							Instances data = new Instances(datafile);
 							data.setClassIndex(data.numAttributes() - 1); 
 							percent2=ApplyJ48(data,Integer.parseInt(textCV.getText()));
+							if(comboBox3.getSelectedIndex()==0){//bütün kanallar
+							    ar2.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent2*data.numInstances());
+							}
+							else if(comboBox3.getSelectedIndex()==2){//kanal d 
+								ar9.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+							}
 							}
 							catch (Exception e) {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
 							}
 					}
+					else if(textDate1.getText().equals("2016-01-06") && textDate2.getText().equals("2016-01-06")){
+						try{
+							BufferedReader datafile = readDataFile("poyrazkarayel6ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+							Instances data = new Instances(datafile);
+							data.setClassIndex(data.numAttributes() - 1); 
+							percent3 = ApplyJ48(data,Integer.parseInt(textCV.getText()));
+							ar3.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent3*data.numInstances());
+							}
+							catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+					}
+					
 				}
 				
 				if(comboBox.getSelectedIndex()==0 && comboBox1.getSelectedIndex()==4)//Naive Bayes ve Seksenler
 				{
 					if(textDate1.getText().equals("2015-12-28") && textDate2.getText().equals("2016-01-03")){
-					try{
-					BufferedReader datafile = readDataFile("seksenler28aralik3ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
-					Instances data = new Instances(datafile);
-					data.setClassIndex(data.numAttributes() - 1); 
-					percent1=ApplyNaiveBayes(data,Integer.parseInt(textCV.getText()));
-					ar1.put(comboBox1.getSelectedItem().toString(), percent1);
-					}
-					catch (Exception e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
+						try{
+							BufferedReader datafile = readDataFile("seksenler28aralik3ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+							Instances data = new Instances(datafile);
+							data.setClassIndex(data.numAttributes() - 1); 
+							percent1=ApplyNaiveBayes(data,Integer.parseInt(textCV.getText()));
+							if(comboBox3.getSelectedIndex()==0){//bütün kanallar
+								ar1.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+							}
+							else if(comboBox3.getSelectedIndex()==1){//trt1
+								ar5.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+							}
+						}
+						catch (Exception e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
 					}
 					
 					else if(textDate1.getText().equals("2016-01-04") && textDate2.getText().equals("2016-01-10")){
@@ -685,7 +899,12 @@ public class TwitterApplication implements Serializable {
 							Instances data = new Instances(datafile);
 							data.setClassIndex(data.numAttributes() - 1); 
 							percent2=ApplyNaiveBayes(data,Integer.parseInt(textCV.getText()));
-							ar2.put(comboBox1.getSelectedItem().toString(), percent2);
+							if(comboBox3.getSelectedIndex()==0){//bütün kanallar
+							    ar2.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent2*data.numInstances());
+							}
+							else if(comboBox3.getSelectedIndex()==1){//trt1
+								ar8.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+							}
 							}
 							catch (Exception e) {
 								// TODO Auto-generated catch block
@@ -700,17 +919,22 @@ public class TwitterApplication implements Serializable {
 				if(comboBox.getSelectedIndex()==1 && comboBox1.getSelectedIndex()==4)//KNN ve Seksenler
 				{
 					if(textDate1.getText().equals("2015-12-28") && textDate2.getText().equals("2016-01-03")){
-					try{
-					BufferedReader datafile = readDataFile("seksenler28aralik3ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
-					Instances data = new Instances(datafile);
-					data.setClassIndex(data.numAttributes() - 1); 
-					percent1=ApplyKNN(data,Integer.parseInt(textCV.getText()),Integer.parseInt(textKNN.getText()));
-					
-					}
-					catch (Exception e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
+						try{
+							BufferedReader datafile = readDataFile("seksenler28aralik3ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+							Instances data = new Instances(datafile);
+							data.setClassIndex(data.numAttributes() - 1); 
+							percent1=ApplyKNN(data,Integer.parseInt(textCV.getText()),Integer.parseInt(textKNN.getText()));
+							if(comboBox3.getSelectedIndex()==0){//bütün kanallar
+								ar1.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+							}
+							else if(comboBox3.getSelectedIndex()==1){//trt1
+								ar5.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+							}
+						}
+						catch (Exception e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
 					}
 					else if(textDate1.getText().equals("2016-01-04") && textDate2.getText().equals("2016-01-10")){
 						try{
@@ -718,7 +942,12 @@ public class TwitterApplication implements Serializable {
 							Instances data = new Instances(datafile);
 							data.setClassIndex(data.numAttributes() - 1); 
 							percent2=ApplyKNN(data,Integer.parseInt(textCV.getText()),Integer.parseInt(textKNN.getText()));
-							
+							if(comboBox3.getSelectedIndex()==0){//bütün kanallar
+							    ar2.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent2*data.numInstances());
+							}
+							else if(comboBox3.getSelectedIndex()==1){//trt1
+								ar8.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+							}
 							}
 							catch (Exception e) {
 								// TODO Auto-generated catch block
@@ -728,26 +957,37 @@ public class TwitterApplication implements Serializable {
 				}
 				
 				if(comboBox.getSelectedIndex()==2 && comboBox1.getSelectedIndex()==4)//C4.5 ve Seksenler
-				{	if(textDate1.getText().equals("2015-12-28") && textDate2.getText().equals("2016-01-03")){
+				{	
+					if(textDate1.getText().equals("2015-12-28") && textDate2.getText().equals("2016-01-03")){
 					try{
-					BufferedReader datafile = readDataFile("seksenler28aralik3ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
-					Instances data = new Instances(datafile);
-					data.setClassIndex(data.numAttributes() - 1); 
-					percent1=ApplyJ48(data,Integer.parseInt(textCV.getText()));
-					
+						BufferedReader datafile = readDataFile("seksenler28aralik3ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+						Instances data = new Instances(datafile);
+						data.setClassIndex(data.numAttributes() - 1); 
+						percent1=ApplyJ48(data,Integer.parseInt(textCV.getText()));
+						if(comboBox3.getSelectedIndex()==0){//bütün kanallar
+							ar1.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+						}
+						else if(comboBox3.getSelectedIndex()==1){//trt1
+							ar5.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+						}
 					}
 					catch (Exception e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
-					}
+				}
 					else if(textDate1.getText().equals("2016-01-04") && textDate2.getText().equals("2016-01-10")){
 					try{
 						BufferedReader datafile = readDataFile("seksenler4ocak10ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
 						Instances data = new Instances(datafile);
 						data.setClassIndex(data.numAttributes() - 1); 
 						percent2=ApplyJ48(data,Integer.parseInt(textCV.getText()));
-						
+						if(comboBox3.getSelectedIndex()==0){//bütün kanallar
+						    ar2.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent2*data.numInstances());
+						}
+						else if(comboBox3.getSelectedIndex()==1){//trt1
+							ar8.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+						}
 						}
 						catch (Exception e) {
 							// TODO Auto-generated catch block
@@ -765,7 +1005,12 @@ public class TwitterApplication implements Serializable {
 					Instances data = new Instances(datafile);
 					data.setClassIndex(data.numAttributes() - 1); 
 					percent1=ApplyNaiveBayes(data,Integer.parseInt(textCV.getText()));
-					ar1.put(comboBox1.getSelectedItem().toString(), percent1);
+					if(comboBox3.getSelectedIndex()==0){//bütün kanallar
+						ar1.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+					}
+					else if(comboBox3.getSelectedIndex()==3){//atv 
+						ar7.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+					}
 					}
 					catch (Exception e) {
 						// TODO Auto-generated catch block
@@ -778,7 +1023,12 @@ public class TwitterApplication implements Serializable {
 							Instances data = new Instances(datafile);
 							data.setClassIndex(data.numAttributes() - 1); 
 							percent2=ApplyNaiveBayes(data,Integer.parseInt(textCV.getText()));
-							ar2.put(comboBox1.getSelectedItem().toString(), percent2);
+							if(comboBox3.getSelectedIndex()==0){//bütün kanallar
+							    ar2.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent2*data.numInstances());
+							}
+							else if(comboBox3.getSelectedIndex()==3){//atv
+								ar10.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+							}
 							}
 							catch (Exception e) {
 								// TODO Auto-generated catch block
@@ -795,6 +1045,12 @@ public class TwitterApplication implements Serializable {
 					Instances data = new Instances(datafile);
 					data.setClassIndex(data.numAttributes() - 1); 
 					percent1=ApplyKNN(data,Integer.parseInt(textCV.getText()),Integer.parseInt(textKNN.getText()));
+					if(comboBox3.getSelectedIndex()==0){//bütün kanallar
+						ar1.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+					}
+					else if(comboBox3.getSelectedIndex()==3){//atv 
+						ar7.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+					}
 					}
 					catch (Exception e) {
 						// TODO Auto-generated catch block
@@ -807,6 +1063,12 @@ public class TwitterApplication implements Serializable {
 							Instances data = new Instances(datafile);
 							data.setClassIndex(data.numAttributes() - 1); 
 							percent2=ApplyKNN(data,Integer.parseInt(textCV.getText()),Integer.parseInt(textKNN.getText()));
+							if(comboBox3.getSelectedIndex()==0){//bütün kanallar
+							    ar2.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent2*data.numInstances());
+							}
+							else if(comboBox3.getSelectedIndex()==3){//atv
+								ar10.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+							}
 							}
 							catch (Exception e) {
 								// TODO Auto-generated catch block
@@ -823,6 +1085,12 @@ public class TwitterApplication implements Serializable {
 					Instances data = new Instances(datafile);
 					data.setClassIndex(data.numAttributes() - 1); 
 					percent1=ApplyJ48(data,Integer.parseInt(textCV.getText()));
+					if(comboBox3.getSelectedIndex()==0){//bütün kanallar
+						ar1.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+					}
+					else if(comboBox3.getSelectedIndex()==3){//atv 
+						ar7.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+					}
 					}
 					catch (Exception e) {
 						// TODO Auto-generated catch block
@@ -835,6 +1103,12 @@ public class TwitterApplication implements Serializable {
 							Instances data = new Instances(datafile);
 							data.setClassIndex(data.numAttributes() - 1); 
 							percent2=ApplyJ48(data,Integer.parseInt(textCV.getText()));
+							if(comboBox3.getSelectedIndex()==0){//bütün kanallar
+							    ar2.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent2*data.numInstances());
+							}
+							else if(comboBox3.getSelectedIndex()==3){//atv
+								ar10.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+							}
 							}
 							catch (Exception e) {
 								// TODO Auto-generated catch block
@@ -851,7 +1125,12 @@ public class TwitterApplication implements Serializable {
 					Instances data = new Instances(datafile);
 					data.setClassIndex(data.numAttributes() - 1); 
 					percent1=ApplyNaiveBayes(data,Integer.parseInt(textCV.getText()));
-					ar1.put(comboBox1.getSelectedItem().toString(), percent1);
+					if(comboBox3.getSelectedIndex()==0){//bütün kanallar
+						ar1.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+					}
+					else if(comboBox3.getSelectedIndex()==2){//kanal d 
+						ar6.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+					}
 					}
 					catch (Exception e) {
 						// TODO Auto-generated catch block
@@ -864,7 +1143,12 @@ public class TwitterApplication implements Serializable {
 							Instances data = new Instances(datafile);
 							data.setClassIndex(data.numAttributes() - 1); 
 							percent2=ApplyNaiveBayes(data,Integer.parseInt(textCV.getText()));
-							ar2.put(comboBox1.getSelectedItem().toString(), percent2);
+							if(comboBox3.getSelectedIndex()==0){//bütün kanallar
+							    ar2.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent2*data.numInstances());
+							}
+							else if(comboBox3.getSelectedIndex()==2){//kanal d 
+								ar9.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+							}
 							}
 							catch (Exception e) {
 								// TODO Auto-generated catch block
@@ -877,7 +1161,7 @@ public class TwitterApplication implements Serializable {
 							Instances data = new Instances(datafile);
 							data.setClassIndex(data.numAttributes() - 1); 
 							percent4 = ApplyNaiveBayes(data,Integer.parseInt(textCV.getText()));
-							ar4.put(comboBox1.getSelectedItem().toString(), percent4);
+							ar4.put(comboBox1.getSelectedItem().toString() +"(" + data.numInstances() + " tweet)" , percent4*data.numInstances());
 							}
 							catch (Exception e) {
 								// TODO Auto-generated catch block
@@ -894,6 +1178,12 @@ public class TwitterApplication implements Serializable {
 					Instances data = new Instances(datafile);
 					data.setClassIndex(data.numAttributes() - 1); 
 					percent1=ApplyKNN(data,Integer.parseInt(textCV.getText()),Integer.parseInt(textKNN.getText()));
+					if(comboBox3.getSelectedIndex()==0){//bütün kanallar
+						ar1.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+					}
+					else if(comboBox3.getSelectedIndex()==2){//kanal d 
+						ar6.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+					}
 					}
 					catch (Exception e) {
 						// TODO Auto-generated catch block
@@ -906,6 +1196,25 @@ public class TwitterApplication implements Serializable {
 							Instances data = new Instances(datafile);
 							data.setClassIndex(data.numAttributes() - 1); 
 							percent2=ApplyKNN(data,Integer.parseInt(textCV.getText()),Integer.parseInt(textKNN.getText()));
+							if(comboBox3.getSelectedIndex()==0){//bütün kanallar
+							    ar2.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent2*data.numInstances());
+							}
+							else if(comboBox3.getSelectedIndex()==2){//kanal d 
+								ar9.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+							}
+							}
+							catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+					}
+					else if(textDate1.getText().equals("2016-01-08") && textDate2.getText().equals("2016-01-08")){
+						try{
+							BufferedReader datafile = readDataFile("arkasokaklar8ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+							Instances data = new Instances(datafile);
+							data.setClassIndex(data.numAttributes() - 1); 
+							percent4 = ApplyKNN(data,Integer.parseInt(textCV.getText()),Integer.parseInt(textKNN.getText()));
+							ar4.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent4*data.numInstances());
 							}
 							catch (Exception e) {
 								// TODO Auto-generated catch block
@@ -922,6 +1231,12 @@ public class TwitterApplication implements Serializable {
 					Instances data = new Instances(datafile);
 					data.setClassIndex(data.numAttributes() - 1); 
 					percent1=ApplyJ48(data,Integer.parseInt(textCV.getText()));
+					if(comboBox3.getSelectedIndex()==0){//bütün kanallar
+						ar1.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+					}
+					else if(comboBox3.getSelectedIndex()==2){//kanal d 
+						ar6.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+					}
 					}
 					catch (Exception e) {
 						// TODO Auto-generated catch block
@@ -934,6 +1249,25 @@ public class TwitterApplication implements Serializable {
 							Instances data = new Instances(datafile);
 							data.setClassIndex(data.numAttributes() - 1); 
 							percent2=ApplyJ48(data,Integer.parseInt(textCV.getText()));
+							if(comboBox3.getSelectedIndex()==0){//bütün kanallar
+							    ar2.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent2*data.numInstances());
+							}
+							else if(comboBox3.getSelectedIndex()==2){//kanal d 
+								ar9.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+							}
+							}
+							catch (Exception e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
+							}
+					}
+					else if(textDate1.getText().equals("2016-01-08") && textDate2.getText().equals("2016-01-08")){
+						try{
+							BufferedReader datafile = readDataFile("arkasokaklar8ocak.txt"); //comboBox1.getSelectedItem().toString().concat(".txt")
+							Instances data = new Instances(datafile);
+							data.setClassIndex(data.numAttributes() - 1); 
+							percent4 = ApplyJ48(data,Integer.parseInt(textCV.getText()));
+							ar4.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent4*data.numInstances());
 							}
 							catch (Exception e) {
 								// TODO Auto-generated catch block
@@ -950,7 +1284,12 @@ public class TwitterApplication implements Serializable {
 					Instances data = new Instances(datafile);
 					data.setClassIndex(data.numAttributes() - 1); 
 					percent1=ApplyNaiveBayes(data,Integer.parseInt(textCV.getText()));
-					ar1.put(comboBox1.getSelectedItem().toString(), percent1);
+					if(comboBox3.getSelectedIndex()==0){//bütün kanallar
+						ar1.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+					}
+					else if(comboBox3.getSelectedIndex()==3){//atv 
+						ar7.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+					}
 					}
 					catch (Exception e) {
 						// TODO Auto-generated catch block
@@ -963,7 +1302,12 @@ public class TwitterApplication implements Serializable {
 							Instances data = new Instances(datafile);
 							data.setClassIndex(data.numAttributes() - 1); 
 							percent2=ApplyNaiveBayes(data,Integer.parseInt(textCV.getText()));
-							ar2.put(comboBox1.getSelectedItem().toString(), percent2);
+							if(comboBox3.getSelectedIndex()==0){//bütün kanallar
+							    ar2.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent2*data.numInstances());
+							}
+							else if(comboBox3.getSelectedIndex()==3){//atv
+								ar10.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+							}
 							}
 							catch (Exception e) {
 								// TODO Auto-generated catch block
@@ -980,6 +1324,12 @@ public class TwitterApplication implements Serializable {
 					Instances data = new Instances(datafile);
 					data.setClassIndex(data.numAttributes() - 1); 
 					percent1=ApplyKNN(data,Integer.parseInt(textCV.getText()),Integer.parseInt(textKNN.getText()));
+					if(comboBox3.getSelectedIndex()==0){//bütün kanallar
+						ar1.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+					}
+					else if(comboBox3.getSelectedIndex()==3){//atv 
+						ar7.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+					}
 					}
 					catch (Exception e) {
 						// TODO Auto-generated catch block
@@ -992,6 +1342,12 @@ public class TwitterApplication implements Serializable {
 							Instances data = new Instances(datafile);
 							data.setClassIndex(data.numAttributes() - 1); 
 							percent2=ApplyKNN(data,Integer.parseInt(textCV.getText()),Integer.parseInt(textKNN.getText()));
+							if(comboBox3.getSelectedIndex()==0){//bütün kanallar
+							    ar2.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent2*data.numInstances());
+							}
+							else if(comboBox3.getSelectedIndex()==3){//atv
+								ar10.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+							}
 							}
 							catch (Exception e) {
 								// TODO Auto-generated catch block
@@ -1008,6 +1364,12 @@ public class TwitterApplication implements Serializable {
 					Instances data = new Instances(datafile);
 					data.setClassIndex(data.numAttributes() - 1); 
 					percent1=ApplyJ48(data,Integer.parseInt(textCV.getText()));
+					if(comboBox3.getSelectedIndex()==0){//bütün kanallar
+						ar1.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+					}
+					else if(comboBox3.getSelectedIndex()==3){//atv 
+						ar7.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+					}
 					}
 					catch (Exception e) {
 						// TODO Auto-generated catch block
@@ -1020,6 +1382,12 @@ public class TwitterApplication implements Serializable {
 							Instances data = new Instances(datafile);
 							data.setClassIndex(data.numAttributes() - 1); 
 							percent2=ApplyJ48(data,Integer.parseInt(textCV.getText()));
+							if(comboBox3.getSelectedIndex()==0){//bütün kanallar
+							    ar2.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent2*data.numInstances());
+							}
+							else if(comboBox3.getSelectedIndex()==3){//atv
+								ar10.put(comboBox1.getSelectedItem().toString()+"(" + data.numInstances() + " tweet)", percent1*data.numInstances());
+							}
 							}
 							catch (Exception e) {
 								// TODO Auto-generated catch block
@@ -1035,11 +1403,11 @@ public class TwitterApplication implements Serializable {
 		buttonPieChart.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent arg0) {
-				if(comboBox2.getSelectedIndex()==0){ //28aralik-3ocak
+				if(comboBox2.getSelectedIndex()==0 && comboBox3.getSelectedIndex()==0){ //28aralik-3ocak tüm
 				PieChart pc = new PieChart("Haftalık Görünüm","Hangi dizi daha çok olumlu tweet topladı?");
 				
 				//new PieChart("Haftalık Görünüm","Hangi dizi daha çok olumlu tweet topladı?").createDataset(ar1);
-				JFreeChart chart = pc.createChart(pc.createDataset(ar1),"Haftalık Görünüm");
+				JFreeChart chart = pc.createChart(pc.createDataset(ar1),"28 Aralık-3 Ocak Tüm Kanallar");
 				ChartPanel chartPanel = new ChartPanel(chart);
 		        // default size
 		        chartPanel.setPreferredSize(new java.awt.Dimension(500, 270));
@@ -1049,11 +1417,11 @@ public class TwitterApplication implements Serializable {
 				pc.pack();
 				pc.setVisible(true);
 				}
-				else if(comboBox2.getSelectedIndex()==1){//4ocak-10ocak
+				else if(comboBox2.getSelectedIndex()==1  && comboBox3.getSelectedIndex()==0){//4ocak-10ocak tüm 
 					PieChart pc = new PieChart("Haftalık Görünüm","Hangi dizi daha çok olumlu tweet topladı?");
 					
 					//new PieChart("Haftalık Görünüm","Hangi dizi daha çok olumlu tweet topladı?").createDataset(ar1);
-					JFreeChart chart = pc.createChart(pc.createDataset(ar2),"Haftalık Görünüm");
+					JFreeChart chart = pc.createChart(pc.createDataset(ar2),"4 Ocak-10 Ocak Tüm Kanallar");
 					ChartPanel chartPanel = new ChartPanel(chart);
 			        // default size
 			        chartPanel.setPreferredSize(new java.awt.Dimension(500, 270));
@@ -1064,7 +1432,7 @@ public class TwitterApplication implements Serializable {
 					pc.setVisible(true);
 						
 				}
-				else if(comboBox2.getSelectedIndex()==2){//6 ocak
+				else if(comboBox2.getSelectedIndex()==2  && comboBox3.getSelectedIndex()==0){//6 ocaktakiler
 					PieChart pc = new PieChart("6 Ocak","Hangi dizi daha çok olumlu tweet topladı?");
 					
 					//new PieChart("Haftalık Görünüm","Hangi dizi daha çok olumlu tweet topladı?").createDataset(ar1);
@@ -1079,7 +1447,7 @@ public class TwitterApplication implements Serializable {
 					pc.setVisible(true);
 						
 				}
-				else if(comboBox2.getSelectedIndex()==3){//8 ocak
+				else if(comboBox2.getSelectedIndex()==3  && comboBox3.getSelectedIndex()==0 ){//8 ocaktakiler
 					PieChart pc = new PieChart("8 Ocak","Hangi dizi daha çok olumlu tweet topladı?");
 					
 					//new PieChart("Haftalık Görünüm","Hangi dizi daha çok olumlu tweet topladı?").createDataset(ar1);
@@ -1094,6 +1462,99 @@ public class TwitterApplication implements Serializable {
 					pc.setVisible(true);
 						
 				}
+				else if(comboBox2.getSelectedIndex()==0  && comboBox3.getSelectedIndex()==1 ){//28 aralık 3 ocak trt1
+					PieChart pc = new PieChart("28 Aralık - 3 Ocak TRT-1","Hangi dizi daha çok olumlu tweet topladı?");
+					
+					//new PieChart("Haftalık Görünüm","Hangi dizi daha çok olumlu tweet topladı?").createDataset(ar1);
+					JFreeChart chart = pc.createChart(pc.createDataset(ar5),"28 Aralık-3 Ocak TRT-1");
+					ChartPanel chartPanel = new ChartPanel(chart);
+			        // default size
+			        chartPanel.setPreferredSize(new java.awt.Dimension(500, 270));
+			        // add it to our application
+			        pc.setContentPane(chartPanel);
+			        
+					pc.pack();
+					pc.setVisible(true);
+						
+				}
+				else if(comboBox2.getSelectedIndex()==0  && comboBox3.getSelectedIndex()==2 ){//28 aralık 3 ocak kanal d 
+					PieChart pc = new PieChart("28 Aralık - 3 Ocak Kanal D","Hangi dizi daha çok olumlu tweet topladı?");
+					
+					//new PieChart("Haftalık Görünüm","Hangi dizi daha çok olumlu tweet topladı?").createDataset(ar1);
+					JFreeChart chart = pc.createChart(pc.createDataset(ar6),"28 Aralık-3 Ocak Kanal D");
+					ChartPanel chartPanel = new ChartPanel(chart);
+			        // default size
+			        chartPanel.setPreferredSize(new java.awt.Dimension(500, 270));
+			        // add it to our application
+			        pc.setContentPane(chartPanel);
+			        
+					pc.pack();
+					pc.setVisible(true);
+						
+				}
+				else if(comboBox2.getSelectedIndex()==0  && comboBox3.getSelectedIndex()==3 ){//28 aralık 3 ocak atv
+					PieChart pc = new PieChart("28 Aralık - 3 Ocak ATV","Hangi dizi daha çok olumlu tweet topladı?");
+					
+					//new PieChart("Haftalık Görünüm","Hangi dizi daha çok olumlu tweet topladı?").createDataset(ar1);
+					JFreeChart chart = pc.createChart(pc.createDataset(ar7),"28 Aralık-3 Ocak ATV");
+					ChartPanel chartPanel = new ChartPanel(chart);
+			        // default size
+			        chartPanel.setPreferredSize(new java.awt.Dimension(500, 270));
+			        // add it to our application
+			        pc.setContentPane(chartPanel);
+			        
+					pc.pack();
+					pc.setVisible(true);
+						
+				}
+				else if(comboBox2.getSelectedIndex()==1  && comboBox3.getSelectedIndex()==1 ){//4 Ocak-10 Ocak TRT1
+					PieChart pc = new PieChart("4 Ocak-10 Ocak TRT-1","Hangi dizi daha çok olumlu tweet topladı?");
+					
+					//new PieChart("Haftalık Görünüm","Hangi dizi daha çok olumlu tweet topladı?").createDataset(ar1);
+					JFreeChart chart = pc.createChart(pc.createDataset(ar8),"4 Ocak-10 Ocak TRT-1");
+					ChartPanel chartPanel = new ChartPanel(chart);
+			        // default size
+			        chartPanel.setPreferredSize(new java.awt.Dimension(500, 270));
+			        // add it to our application
+			        pc.setContentPane(chartPanel);
+			        
+					pc.pack();
+					pc.setVisible(true);
+						
+				}
+				else if(comboBox2.getSelectedIndex()==1  && comboBox3.getSelectedIndex()==2 ){//4 Ocak-10 Ocak Kanal D
+					PieChart pc = new PieChart("4 Ocak-10 Ocak Kanal D","Hangi dizi daha çok olumlu tweet topladı?");
+					
+					//new PieChart("Haftalık Görünüm","Hangi dizi daha çok olumlu tweet topladı?").createDataset(ar1);
+					JFreeChart chart = pc.createChart(pc.createDataset(ar9),"4 Ocak-10 Ocak Kanal D");
+					ChartPanel chartPanel = new ChartPanel(chart);
+			        // default size
+			        chartPanel.setPreferredSize(new java.awt.Dimension(500, 270));
+			        // add it to our application
+			        pc.setContentPane(chartPanel);
+			        
+					pc.pack();
+					pc.setVisible(true);
+						
+				}
+				else if(comboBox2.getSelectedIndex()==1  && comboBox3.getSelectedIndex()==3 ){//4 Ocak-10 Ocak ATV
+					PieChart pc = new PieChart("4 Ocak-10 Ocak ATV","Hangi dizi daha çok olumlu tweet topladı?");
+					
+					//new PieChart("Haftalık Görünüm","Hangi dizi daha çok olumlu tweet topladı?").createDataset(ar1);
+					JFreeChart chart = pc.createChart(pc.createDataset(ar10),"4 Ocak-10 Ocak ATV");
+					ChartPanel chartPanel = new ChartPanel(chart);
+			        // default size
+			        chartPanel.setPreferredSize(new java.awt.Dimension(500, 270));
+			        // add it to our application
+			        pc.setContentPane(chartPanel);
+			        
+					pc.pack();
+					pc.setVisible(true);
+						
+				}				
+				
+				
+				
 				
 				
 		}});
@@ -1506,13 +1967,49 @@ public class TwitterApplication implements Serializable {
 	    System.out.println(eval.toSummaryString());
 	    System.out.println(eval.toMatrixString());
 	    System.out.println(eval.toClassDetailsString());
-	    System.out.println("Bu dizi hakkında pozitif tweetlerin oranı:" + "%"+eval.truePositiveRate(0)*100);
-	    JOptionPane.showMessageDialog(null, "Doğru sınıflandırma yüzdesi" + "%" + String.format("%.2f", eval.pctCorrect()) 
+	    //System.out.println("Bu dizi hakkında pozitif tweetlerin oranı:" + "%"+eval.truePositiveRate(0)*100);
+	   /* JOptionPane.showMessageDialog(null, "Doğru sınıflandırma yüzdesi" + "%" + String.format("%.2f", eval.pctCorrect()) 
 	    + "\nBu dizi hakkında doğru sınıflandırılmış pozitif tweetlerin oranı:" + "%"+ String.format("%.2f", eval.truePositiveRate(0)*100) 
 	    + "\nBu dizi hakkında doğru sınıflandırılmış negatif tweetlerin oranı:" + "%" + String.format("%.2f", eval.truePositiveRate(1)*100)
-	    + "\nBu dizi hakkında doğru sınıflandırılmış nötr tweetlerin oranı:" + "%" + String.format("%.2f", eval.truePositiveRate(2)*100));
+	    + "\nBu dizi hakkında doğru sınıflandırılmış nötr tweetlerin oranı:" + "%" + String.format("%.2f", eval.truePositiveRate(2)*100)); */
 		
-	    return Double.parseDouble(String.format("%.2f", eval.truePositiveRate(0)*100));
+	  //String cls;
+	    int i;
+	    
+	    double pos=0;
+	    double neg=0;
+	    double neut=0;
+	   /* for(i=0;i<50;i++){
+	    cls=dataFiltered.classAttribute().value((int) classifier.classifyInstance(dataFiltered.instance(i)));
+	    System.out.println("En son " + cls);
+	    } */
+	    for ( i = 0; i < dataFiltered.numInstances(); i++) {
+	    	   double pred = classifier.classifyInstance(dataFiltered.instance(i));
+	    	   System.out.print("ID: " + dataFiltered.instance(i).value(0));
+	    	   System.out.print(", actual: " + dataFiltered.classAttribute().value((int) dataFiltered.instance(i).classValue()));
+	    	   System.out.println(", predicted: " + dataFiltered.classAttribute().value((int) pred));
+	    	   if(dataFiltered.classAttribute().value((int) pred).contains("positive")){
+	    		   pos++;
+	    	   }
+	    	   else if(dataFiltered.classAttribute().value((int) pred).contains("negative")){
+	    		   neg++;
+	    	   }
+	    	   else if(dataFiltered.classAttribute().value((int) pred).contains("neutral")){
+	    		   neut++;
+	    	   }	 
+	    }
+	    System.out.println("Bu dizi hakkında pozitif tweetlerin oranı:" + "%" + String.format("%.2f", (pos/dataFiltered.numInstances())*100));
+	    System.out.println("Bu dizi hakkında negatif tweetlerin oranı:" + "%" + String.format("%.2f", (neg/dataFiltered.numInstances())*100));
+	    System.out.println("Bu dizi hakkında nötr tweetlerin oranı:" + "%" + String.format("%.2f", (neut/dataFiltered.numInstances())*100));
+
+	    JOptionPane.showMessageDialog(null, "Doğru sınıflandırma yüzdesi" + "%" + String.format("%.2f", eval.pctCorrect()) 
+	    + "\nBu dizi hakkında pozitif tweetlerin oranı:" + "%"+ String.format("%.2f", (pos/dataFiltered.numInstances())*100) 
+	    + "\nBu dizi hakkında negatif tweetlerin oranı:" + "%" + String.format("%.2f", (neg/dataFiltered.numInstances())*100)
+	    + "\nBu dizi hakkında nötr tweetlerin oranı:" + "%" + String.format("%.2f", (neut/dataFiltered.numInstances())*100));
+		
+	    
+	    
+	    return Double.parseDouble(String.format("%.2f",(pos/dataFiltered.numInstances())*100));
 		/*
 		Instances[][] split = crossValidationSplit(dataFiltered, k);
 		Instances[] trainingSets = split[0];
@@ -1587,11 +2084,52 @@ public class TwitterApplication implements Serializable {
  	    System.out.println(eval.toSummaryString());
  	    System.out.println(eval.toMatrixString());
  	    System.out.println(eval.toClassDetailsString());
- 	    System.out.println("Bu dizi hakkında pozitif tweetlerin oranı:" + "%"+eval.truePositiveRate(0)*100);
- 	    JOptionPane.showMessageDialog(null, "Doğru sınıflandırma yüzdesi" + "%" + String.format("%.2f", eval.pctCorrect()) 
- 	    + "\nBu dizi hakkında pozitif tweetlerin oranı:" + "%"+ String.format("%.2f", eval.truePositiveRate(0)*100));
-         
- 	     return Double.parseDouble(String.format("%.2f", eval.truePositiveRate(0)*100));
+ 	   // System.out.println("Bu dizi hakkında pozitif tweetlerin oranı:" + "%"+eval.truePositiveRate(0)*100);
+ 	   /*  JOptionPane.showMessageDialog(null, "Doğru sınıflandırma yüzdesi" + "%" + String.format("%.2f", eval.pctCorrect()) 
+ 	    + "\nBu dizi hakkında doğru sınıflandırılmış pozitif tweetlerin oranı:" + "%"+ String.format("%.2f", eval.truePositiveRate(0)*100)); */
+ 	    
+ 	    //String cls;
+	    int i;
+	    
+	   /* for(i=0;i<50;i++){
+	    cls=dataFiltered.classAttribute().value((int) classifier.classifyInstance(dataFiltered.instance(i)));
+	    System.out.println("En son " + cls);
+	    } */
+	    double pos=0;
+	    double neut=0;
+	    double neg=0;
+	    for ( i = 0; i < dataFiltered.numInstances(); i++) {
+	    	   double pred = classifier.classifyInstance(dataFiltered.instance(i));
+	    	   System.out.print("ID: " + dataFiltered.instance(i).value(0));
+	    	   System.out.print(", actual: " + dataFiltered.classAttribute().value((int) dataFiltered.instance(i).classValue()));
+	    	   System.out.println(", predicted: " + dataFiltered.classAttribute().value((int) pred));
+	    	   if(dataFiltered.classAttribute().value((int) pred).contains("positive")){
+	    		   pos++;
+	    	   }
+	    	   else if(dataFiltered.classAttribute().value((int) pred).contains("negative")){
+	    		   neg++;
+	    	   }
+	    	   else if(dataFiltered.classAttribute().value((int) pred).contains("neutral")){
+	    		   neut++;
+	    	   }	    	   
+	    	 }
+	    
+	    System.out.println(pos);
+	    System.out.println(neg);
+	    System.out.println(neut);	    
+	    
+	    System.out.println(dataFiltered.numInstances());
+	    
+	    System.out.println("Bu dizi hakkında pozitif tweetlerin oranı:" + "%" + String.format("%.2f", (pos/dataFiltered.numInstances())*100));
+	    System.out.println("Bu dizi hakkında negatif tweetlerin oranı:" + "%" + String.format("%.2f", (neg/dataFiltered.numInstances())*100));
+	    System.out.println("Bu dizi hakkında nötr tweetlerin oranı:" + "%" + String.format("%.2f", (neut/dataFiltered.numInstances())*100));
+
+	    JOptionPane.showMessageDialog(null, "Doğru sınıflandırma yüzdesi" + "%" + String.format("%.2f", eval.pctCorrect()) 
+	    + "\nBu dizi hakkında pozitif tweetlerin oranı:" + "%"+ String.format("%.2f", (pos/dataFiltered.numInstances())*100) 
+	    + "\nBu dizi hakkında negatif tweetlerin oranı:" + "%" + String.format("%.2f", (neg/dataFiltered.numInstances())*100)
+	    + "\nBu dizi hakkında nötr tweetlerin oranı:" + "%" + String.format("%.2f", (neut/dataFiltered.numInstances())*100));
+	    
+ 	    return Double.parseDouble(String.format("%.2f", (pos/dataFiltered.numInstances())*100));
 		 //separating training and test sets 
          
          /*
@@ -1708,23 +2246,45 @@ public class TwitterApplication implements Serializable {
 		    System.out.println(eval.toMatrixString());
 		    System.out.println(eval.toClassDetailsString());
 		    System.out.println("Bu dizi hakkında pozitif tweetlerin oranı:" + "%"+eval.truePositiveRate(0)*100);
-		    JOptionPane.showMessageDialog(null, "Doğru sınıflandırma yüzdesi" + "%" + String.format("%.2f", eval.pctCorrect()) 
-		    + "\nBu dizi hakkında pozitif tweetlerin oranı:" + "%"+ String.format("%.2f", eval.truePositiveRate(0)*100));
+		    /*JOptionPane.showMessageDialog(null, "Doğru sınıflandırma yüzdesi" + "%" + String.format("%.2f", eval.pctCorrect()) 
+		    + "\nBu dizi hakkında doğru sınıflandırılmış pozitif tweetlerin oranı:" + "%"+ String.format("%.2f", eval.truePositiveRate(0)*100));*/
 		    
-		    /*
-		    String cls;
-		    cls=dataFiltered.classAttribute().value((int) classifier.classifyInstance(dataFiltered.instance(1)));
-		    System.out.println("En son " + cls); */
-		    
-		    for (int  i = 0; i < dataFiltered.numInstances(); i++) {
+		    int i;
+		    //String cls;
+		    double pos=0;
+		    double neg=0;
+		    double neut=0;
+		   /* for(i=0;i<50;i++){
+		    cls=dataFiltered.classAttribute().value((int) classifier.classifyInstance(dataFiltered.instance(i)));
+		    System.out.println("En son " + cls);
+		    } */
+		    for ( i = 0; i < dataFiltered.numInstances(); i++) {
 		    	   double pred = classifier.classifyInstance(dataFiltered.instance(i));
 		    	   System.out.print("ID: " + dataFiltered.instance(i).value(0));
 		    	   System.out.print(", actual: " + dataFiltered.classAttribute().value((int) dataFiltered.instance(i).classValue()));
 		    	   System.out.println(", predicted: " + dataFiltered.classAttribute().value((int) pred));
+		    	   if(dataFiltered.classAttribute().value((int) pred).contains("positive")){
+		    		   pos++;
+		    	   }
+		    	   else if(dataFiltered.classAttribute().value((int) pred).contains("negative")){
+		    		   neg++;
+		    	   }
+		    	   else if(dataFiltered.classAttribute().value((int) pred).contains("neutral")){
+		    		   neut++;
+		    	   }	 
 		    	 }
+		    System.out.println("Bu dizi hakkında pozitif tweetlerin oranı:" + "%" + String.format("%.2f", (pos/dataFiltered.numInstances())*100));
+		    System.out.println("Bu dizi hakkında negatif tweetlerin oranı:" + "%" + String.format("%.2f", (neg/dataFiltered.numInstances())*100));
+		    System.out.println("Bu dizi hakkında nötr tweetlerin oranı:" + "%" + String.format("%.2f", (neut/dataFiltered.numInstances())*100));
+
+		    JOptionPane.showMessageDialog(null, "Doğru sınıflandırma yüzdesi" + "%" + String.format("%.2f", eval.pctCorrect()) 
+		    + "\nBu dizi hakkında pozitif tweetlerin oranı:" + "%"+ String.format("%.2f", (pos/dataFiltered.numInstances())*100) 
+		    + "\nBu dizi hakkında negatif tweetlerin oranı:" + "%" + String.format("%.2f", (neg/dataFiltered.numInstances())*100)
+		    + "\nBu dizi hakkında nötr tweetlerin oranı:" + "%" + String.format("%.2f", (neut/dataFiltered.numInstances())*100));
+			
 		    
 		    
-		    return Double.parseDouble(String.format("%.2f", eval.truePositiveRate(0)*100));
+		    return Double.parseDouble(String.format("%.2f",(pos/dataFiltered.numInstances())*100));
 		 
 		 /*
 		 //separating training and test sets 
