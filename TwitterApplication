@@ -28,10 +28,10 @@ import javax.swing.JTextField;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
 
-import libsvm.svm;
+/*import libsvm.svm;
 import libsvm.svm_model;
 import libsvm.svm_node;
-import libsvm.svm_parameter;
+import libsvm.svm_parameter;*/
 
 import java.lang.Object;
 import java.sql.Connection;
@@ -93,18 +93,14 @@ import java.io.FileReader;
 import java.io.FileWriter;
 
 
-
-
-//Seksenlerde kalindi
-
 public class TwitterApplication implements Serializable {
 
 	private final Logger logger = Logger.getLogger(TwitterApplication.class.getName());
 	private String CONSUMER_KEY="OR611vX1xkmnuXLwD0tRwpy7D";
 	private String CONSUMER_SECRET="F4REstjhTx75xzwO0dFamRLayEj4gjPYYeKzWBwfsnEMZc4Uf7";
-	Database d = new Database();
-	private String MYSQL_DRIVER = "com.mysql.jdbc.Driver";
-	String databaseURL = "jdbc:mysql://localhost:3306/Twitter";
+	//Database d = new Database();
+	//private String MYSQL_DRIVER = "com.mysql.jdbc.Driver";
+	//String databaseURL = "jdbc:mysql://localhost:3306/Twitter";
 	
 	Connection con = null;
 	Statement st = null;
@@ -1707,102 +1703,50 @@ public class TwitterApplication implements Serializable {
 	
 	//	Database d = new Database();
 		TurkishMorphParser parser = TurkishMorphParser.createWithDefaults();
-		 Class.forName(MYSQL_DRIVER);
-	      System.out.println("Class Loaded....");
-	      con = DriverManager.getConnection(databaseURL,"","");
+		// Class.forName(MYSQL_DRIVER);
+	    //  System.out.println("Class Loaded....");
+	      //con = DriverManager.getConnection(databaseURL,"","");
 	      System.out.println("Inserting data....");
-	      st = con.createStatement();
+	      //st = con.createStatement();
 	      
 		
-		String tweetLabel;
+		//String tweetLabel;
 		
 		String msg = tweet.getText();
 		//String msg = parse(tweet.getText());
 		//out.write(msg);   // dosyaya yazmak icindi
 				
 		System.out.println(cleanupString(msg)); //yeni
-		msg = cleanupString(msg);
+		//msg = cleanupString(msg);
 		
 		String[] input = msg.split(" ");
-		//out.write("\""+cleanupString(msg)+"\""+newLine);
-		out.write("\"");
-		for(int j = 0;  j < input.length; j++)
+		out.write("\""+cleanupString(msg)+"\""+newLine);
+		
+		//out.write("\"");
+		/*for(int j = 0;  j < input.length; j++)
 		{
-			
-		List<MorphParse> parses = parser.parse(input[j]);
-	    for (MorphParse parse : parses) {
-	            System.out.println(parse.root);
-	            out.write(parse.root);
-	    
-	    } 
-	    out.write("\""+newLine);
-	    
-		//new ParseWords(parser).parse(input[j]);
-		ResultSet rs = st.executeQuery("select * from symbols");
-		while(rs.next()){
-		//System.out.println("Db den " +rs.getString("symbol_name"));
-		if(input[j].contains(rs.getString("symbol_name"))){
-			tweetPoint=tweetPoint+rs.getInt(3);
-		}
-		}
-		//System.out.println("puan�m�z "+tweetPoint);
-		
-		}
-		
-		
-		
-		//List<MorphParse> parses = parser.parse(tweet.getText());
-		//System.out.println("Kelime k�k�"+parses);
-		
-		/*for(MorphParse parse : parses)
-		{
-			System.out.println("Kelime k�k�" +parse.formatLong());
-		} */
-		
-		
-		//System.out.println(parsedWord);
-		//Calculating tweet point
-				
 
-		if(tweetPoint>0)
-		{
-			tweetLabel="positive";
-		}
-		else if(tweetPoint<0)
-		{
-			tweetLabel="negative";
-		}
-		else{
-			tweetLabel="neutral";
-		}
-		
-		java.sql.Date tweetDate = convertJavaDateToSqlDate(tweet.getCreatedAt());
-		d.addTweets(tweetDate,tweet.getRetweetCount(),tweetPoint,tweetLabel);
-		
-		
+			List<MorphParse> parses = parser.parse(input[j]);
+			for (MorphParse parse : parses) {
+				System.out.println(parse.root);
+				out.write(parse.root);
+
+			} 
+			out.write("\""+newLine);
+
+			}*/
 		}
 		
-		//Query query = new Query(hashtagList.t + " -filter:retweets -filter:links -filter:replies -filter:images");
-		//QueryResult result2 = twitter.search(query);
-		
-		//for()
-		
-		} catch (TwitterException e) {
+		} 
+		catch (TwitterException e) {
 		
 		e.printStackTrace();
 		System.out.println("Failed to search tweets" + e.getMessage());
 		}
-		catch(ClassNotFoundException ex) {
-		       System.out.println("ClassNotFoundException:\n"+ex.toString());
-		       ex.printStackTrace();
-
-		    } catch(SQLException ex) {
-		        System.out.println("SQLException:\n"+ex.toString());
-		        ex.printStackTrace();
-		    }
 		
 		
-    /*    System.out.println("Tweets:");
+		
+        /*    System.out.println("Tweets:");
 		for(String t :tweetList){
 			System.out.println(t); 
 			
@@ -1862,7 +1806,7 @@ public class TwitterApplication implements Serializable {
 					
 				
 				tweetPoint = 0;
-				String tweetLabel;
+				//String tweetLabel;
 				
 				String msg2 = tweet.getText();
 				System.out.println(cleanupString(msg2)); // yeni
@@ -1882,7 +1826,7 @@ public class TwitterApplication implements Serializable {
 				}
 				
 				//Calculating tweet point
-				if(tweetPoint>0)
+			/*	if(tweetPoint>0)
 				{
 					tweetLabel="positive";
 				}
@@ -1896,7 +1840,7 @@ public class TwitterApplication implements Serializable {
 				
 				java.sql.Date tweetDate = convertJavaDateToSqlDate(tweet.getCreatedAt());
 				
-				d.addTweets(tweetDate,tweet.getRetweetCount(),tweetPoint,tweetLabel);	
+				d.addTweets(tweetDate,tweet.getRetweetCount(),tweetPoint,tweetLabel);*/	
 				
 			}			
 			
@@ -1952,7 +1896,8 @@ public class TwitterApplication implements Serializable {
 		swv.setInputFormat(data);
 		Instances dataFiltered = Filter.useFilter(data, swv);
 		//System.out.println("Filtered data " +dataFiltered.toString());
-
+		
+		System.out.println("\n\nRaw data:\n\n" + data);
 		System.out.println("\n\nFiltered data:\n\n" + dataFiltered);
 		
 		//set the class index
@@ -2071,6 +2016,7 @@ public class TwitterApplication implements Serializable {
          Instances dataFiltered = Filter.useFilter(data, swv);
          //System.out.println("Filtered data " +dataFiltered.toString());
          
+         System.out.println("\n\nRaw data:\n\n" + data);
          System.out.println("\n\nFiltered data:\n\n" + dataFiltered);
          
          
@@ -2230,7 +2176,8 @@ public class TwitterApplication implements Serializable {
 		 swv.setInputFormat(data);
 		 Instances dataFiltered = Filter.useFilter(data, swv);
 		 //System.out.println("Filtered data " +dataFiltered.toString());
-
+		 
+		 System.out.println("\n\nRaw data:\n\n" + data);
 		 System.out.println("\n\nFiltered data:\n\n" + dataFiltered);
 		 
 		//build a model -- choose a classifier as you want
@@ -2273,6 +2220,9 @@ public class TwitterApplication implements Serializable {
 		    		   neut++;
 		    	   }	 
 		    	 }
+		    
+		    
+		    
 		    System.out.println("Bu dizi hakkında pozitif tweetlerin oranı:" + "%" + String.format("%.2f", (pos/dataFiltered.numInstances())*100));
 		    System.out.println("Bu dizi hakkında negatif tweetlerin oranı:" + "%" + String.format("%.2f", (neg/dataFiltered.numInstances())*100));
 		    System.out.println("Bu dizi hakkında nötr tweetlerin oranı:" + "%" + String.format("%.2f", (neut/dataFiltered.numInstances())*100));
@@ -2347,7 +2297,7 @@ public class TwitterApplication implements Serializable {
 		 }
 		 return word;
 	 }
-
+	 
 	 public static void drawPieChart(){
 		 ArrayList<Double> values = new ArrayList<Double>();
 		 values.add(new Double(10));
