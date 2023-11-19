@@ -96,8 +96,8 @@ import java.io.FileWriter;
 public class TwitterApplication implements Serializable {
 
 	private final Logger logger = Logger.getLogger(TwitterApplication.class.getName());
-	private String CONSUMER_KEY="OR611vX1xkmnuXLwD0tRwpy7D";
-	private String CONSUMER_SECRET="F4REstjhTx75xzwO0dFamRLayEj4gjPYYeKzWBwfsnEMZc4Uf7";
+	private String CONSUMER_KEY="xxx";
+	private String CONSUMER_SECRET="xxx";
 	//Database d = new Database();
 	//private String MYSQL_DRIVER = "com.mysql.jdbc.Driver";
 	//String databaseURL = "jdbc:mysql://localhost:3306/Twitter";
